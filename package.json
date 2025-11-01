@@ -1,0 +1,29 @@
+{
+	"name": "asportsmanager-api-cf",
+	"version": "0.0.0",
+	"private": true,
+	"scripts": {
+		"postinstall": "patch-package",
+		"deploy": "wrangler deploy",
+		"dev": "wrangler dev",
+		"start": "wrangler dev",
+		"test": "vitest"
+	},
+	"devDependencies": {
+		"@cloudflare/vitest-pool-workers": "^0.8.19",
+		"@sequelize/mariadb": "^7.0.0-alpha.47",
+		"@sequelize/mysql": "^7.0.0-alpha.47",
+		"@sequelize/postgres": "^7.0.0-alpha.47",
+		"@sequelize/sqlite3": "^7.0.0-alpha.47",
+		"patch-package": "^8.0.1",
+		"vitest": "~3.2.0",
+		"wrangler": "^4.45.3"
+	},
+	"dependencies": {
+		"@sequelize/core": "^7.0.0-alpha.47",
+		"@sequelize/mssql": "^7.0.0-alpha.47",
+		"itty-router": "^5.0.22",
+		"tedious": "^19.0.0",
+		"zod": "^4.1.12"
+	}
+}
