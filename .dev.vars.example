@@ -1,0 +1,9 @@
+# Local development environment variables
+# This file is gitignored and should not be committed
+# Add your DATABASE_PASSWORD here for local development
+ENVIRONMENT=development
+DATABASE_HOST=123.456.789.123
+DATABASE_PORT=1433
+DATABASE_NAME=my_db_name
+DATABASE_USERNAME=my_db_username
+DATABASE_PASSWORD=**********
