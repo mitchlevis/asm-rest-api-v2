@@ -24,6 +24,44 @@
 		"DATABASE_TRUST_CERT": "true",
 		// "NODE_ENV": "development"
 	},
+	"env": {
+		"development": {
+			"vars": {
+				"DATABASE_ENCRYPT": "false",
+				"DATABASE_TRUST_CERT": "true"
+			}
+		},
+		"preview": {
+			"route": {
+				"custom_domain": true,
+        "pattern": "staging-api.asportsmanager.io"
+      },
+			"vars": {
+				"DATABASE_ENCRYPT": "false",
+				"DATABASE_TRUST_CERT": "true",
+				"ENVIRONMENT": "preview",
+				"DATABASE_HOST": "184.162.149.155",
+				"DATABASE_PORT": "1433",
+				"DATABASE_NAME": "DB_3371_asmstaging",
+				"DATABASE_USERNAME": "DB_3371_asmstaging_user",
+			}
+		},
+		"production": {
+			"route": {
+				"custom_domain": true,
+        "pattern": "api.asportsmanager.io"
+      },
+			"vars": {
+				"DATABASE_ENCRYPT": "false",
+				"DATABASE_TRUST_CERT": "true",
+				"ENVIRONMENT": "production",
+				"DATABASE_HOST": "mndSQL80.everleap.com",
+				"DATABASE_PORT": "1433",
+				"DATABASE_NAME": "asmproduction",
+				"DATABASE_USERNAME": "asmadmin",
+			}
+		}
+	},
 	/**
 	 * Note: Use secrets to store sensitive data.
 	 * https://developers.cloudflare.com/workers/configuration/secrets/
