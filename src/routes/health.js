@@ -1,5 +1,3 @@
-import { formatSuccessResponse, formatErrorResponse } from '../utils/helpers.js';
-import * as responseValidationSchema from './health-response.js';
 /**
  * Controllers for health routes
  */
