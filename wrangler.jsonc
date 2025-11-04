@@ -6,24 +6,15 @@
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "asportsmanager-api-cf",
 	"main": "src/index.js",
-	"compatibility_date": "2025-10-31",
+	"compatibility_date": "2025-10-11",
 	"compatibility_flags": ["nodejs_compat"],
 	"observability": {
 		"enabled": true
 	},
 	/**
-	 * Environment Variables
+	 * Environment Variables - By Environment
 	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
 	 */
-	"vars": {
-		// "DATABASE_HOST": "184.162.149.155",
-		// "DATABASE_PORT": "1433",
-		// "DATABASE_NAME": "DB_3371_asmstaging",
-		// "DATABASE_USERNAME": "DB_3371_asmstaging_user",
-		"DATABASE_ENCRYPT": "false",
-		"DATABASE_TRUST_CERT": "true",
-		// "NODE_ENV": "development"
-	},
 	"env": {
 		"development": {
 			"vars": {

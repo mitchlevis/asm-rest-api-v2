@@ -22,8 +22,10 @@
 	"dependencies": {
 		"@sequelize/core": "^7.0.0-alpha.47",
 		"@sequelize/mssql": "^7.0.0-alpha.47",
+		"dayjs": "^1.11.19",
 		"itty-router": "^5.0.22",
 		"tedious": "^19.0.0",
+		"uuid": "^13.0.0",
 		"zod": "^4.1.12"
 	}
 }

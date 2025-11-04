@@ -1,6 +1,8 @@
 import sequelizeAdapter from '../db/adapter.js';
 import { MODELS, MODEL_ASSOCIATIONS } from '../db/models';
 import { z } from 'zod';
+import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
 
 // Format a success response
 // Supports two call patterns:
@@ -314,21 +316,7 @@ export const validateIncomingParameters = async (request, parameters) => {
 	if(body && Object.keys(body).length > 0){
 		try {
 			const bodySchema = z.object(body);
-			let bodyData = {};
-
-			// Try to parse body - handle both string and already-parsed object
-			if(request.body !== undefined && request.body !== null){
-				bodyData = typeof request.body === 'string' ? JSON.parse(request.body || '{}') : request.body;
-			} else {
-				// Try to get body from request.json() if available
-				// Note: This consumes the request body stream, so it can only be called once
-				try {
-					bodyData = await request.json();
-				} catch(parseError){
-					// Body might already be consumed or invalid JSON - default to empty object
-					bodyData = {};
-				}
-			}
+			let bodyData = await request.json()
 
 			validatedParameters.body = bodySchema.parse(bodyData);
 		} catch(error){
@@ -419,3 +407,61 @@ export const getDbObject = async (resourceName, includeAssociations = true) => {
 
   return dbObject;
 }
+
+/**
+ * Encrypts a string using SHA256 with salt - equivalent to VB.NET EncryptSHA256Managed function
+ * @param {string} SALT - The salt value to use
+ * @param {string} clearString - The string to encrypt
+ * @returns {string} Base64 encoded SHA256 hash
+ */
+export const encryptSHA256Managed = (SALT, clearString) => {
+  // Create the salted string (Salt + ClearString) - equivalent to VB.NET UnicodeEncoding.GetBytes(Salt & ClearString)
+  const saltedString = SALT + clearString;
+
+  // Convert to UTF-16LE encoding (equivalent to VB.NET UnicodeEncoding)
+  const utf16Buffer = Buffer.from(saltedString, 'utf16le');
+
+  // Create SHA256 hash - equivalent to VB.NET SHA256Managed.ComputeHash
+  const hash = crypto.createHash('sha256');
+  hash.update(utf16Buffer);
+  const hashBytes = hash.digest();
+
+  // Convert to Base64 string - equivalent to VB.NET Convert.ToBase64String
+  return hashBytes.toString('base64');
+}
+
+// Convert PascalCase to camelCase (recursively)
+export const convertPropertiesToCamelCase = (obj) => {
+  // Handle null or undefined
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+
+  // Handle arrays - recursively convert each element
+  if (Array.isArray(obj)) {
+    return obj.map(item => convertPropertiesToCamelCase(item));
+  }
+
+  // Handle non-object primitives (string, number, boolean, etc.)
+  if (typeof obj !== 'object') {
+    return obj;
+  }
+
+  // Handle Date objects and other special object types
+  if (obj instanceof Date || obj instanceof RegExp || obj instanceof Buffer) {
+    return obj;
+  }
+
+  // Handle plain objects - convert keys and recursively convert values
+  const result = {};
+  for (const key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      // Convert PascalCase to camelCase: first letter lowercase, rest stays the same
+      const camelKey = key.charAt(0).toLowerCase() + key.slice(1);
+      // Recursively convert the value
+      result[camelKey] = convertPropertiesToCamelCase(obj[key]);
+    }
+  }
+
+  return result;
+};
