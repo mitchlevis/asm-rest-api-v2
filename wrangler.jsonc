@@ -15,6 +15,10 @@
 	 * Environment Variables - By Environment
 	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
 	 */
+	 "vars": {
+		"DATABASE_ENCRYPT": "false", // DO NOT REMOVE THIS LINE - IT WILL COMPLETELY BREAK THE DEPLOYMENT
+		"DATABASE_TRUST_CERT": "true", // DO NOT REMOVE THIS LINE - IT WILL COMPLETELY BREAK THE DEPLOYMENT
+	},
 	"env": {
 		"development": {
 			"vars": {
