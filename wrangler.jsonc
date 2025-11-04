@@ -12,6 +12,17 @@
 		"enabled": true
 	},
 	/**
+	 * KV Namespaces
+	 * https://developers.cloudflare.com/kv/concepts/kv-bindings/
+	 * Replace YOUR_NAMESPACE_ID with the actual namespace ID from Cloudflare Dashboard
+	 */
+	"kv_namespaces": [
+			{
+				"binding": "API_KV",
+				"id": "KV_DEV_NAMESPACE_ID"
+			}
+		],
+	/*
 	 * Environment Variables - By Environment
 	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
 	 */
@@ -24,7 +35,14 @@
 			"vars": {
 				"DATABASE_ENCRYPT": "false",
 				"DATABASE_TRUST_CERT": "true"
-			}
+				// The other variables are defined in the .dev.vars file
+			},
+			"kv_namespaces": [
+				{
+					"binding": "API_KV",
+					"id": "KV_DEV_NAMESPACE_ID"
+				}
+			],
 		},
 		"preview": {
 			"route": {
@@ -39,7 +57,13 @@
 				"DATABASE_PORT": "1433",
 				"DATABASE_NAME": "DB_3371_asmstaging",
 				"DATABASE_USERNAME": "DB_3371_asmstaging_user",
-			}
+			},
+			"kv_namespaces": [
+				{
+					"binding": "API_KV",
+					"id": "4c0491e26df247b5932143315b148477"
+				}
+			],
 		},
 		"production": {
 			"route": {
@@ -54,7 +78,13 @@
 				"DATABASE_PORT": "1433",
 				"DATABASE_NAME": "asmproduction",
 				"DATABASE_USERNAME": "asmadmin",
-			}
+			},
+			"kv_namespaces": [
+				{
+					"binding": "API_KV",
+					"id": "f046212f59ed4615a96928b39529488b"
+				}
+			],
 		}
 	},
 	/**

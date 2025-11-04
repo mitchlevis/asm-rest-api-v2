@@ -1,16 +1,107 @@
 import { Sequelize } from '@sequelize/core';
 import { MsSqlDialect } from '@sequelize/mssql';
 import * as tedious from 'tedious';
+import KV from '../services/KV.js';
 
 let sequelize = null;
+let env = null; // Store env reference for use across adapter functions
+
+const ipv4Regex = /^(?:\d{1,3}\.){3}\d{1,3}$/;
+
+/**
+ * Generate KV key for DNS cache entry
+ * @param {string} hostname - The hostname to cache
+ * @returns {string} KV key
+ */
+function getDNSCacheKey(hostname) {
+	return `dns:${hostname}`;
+}
+
+/**
+ * Resolve hostname to IPv4 address using Cloudflare DoH
+ * Caches results in KV storage with TTL
+ * @param {string} hostname - The hostname to resolve
+ * @returns {Promise<{address: string, ttl: number}>} Resolved IPv4 address and TTL
+ */
+async function resolveIPv4Address(hostname) {
+	if (!hostname || ipv4Regex.test(hostname)) {
+		return { address: hostname, ttl: 0 };
+	}
+
+	console.log('Resolving IPv4 address for hostname:', hostname);
+
+	// Check KV cache first
+	const cacheKey = getDNSCacheKey(hostname);
+	try {
+		const cached = await KV.get(cacheKey, env, { type: 'json' });
+		if (cached && cached.address) {
+			console.log('DNS cache hit for hostname:', hostname, '->', cached.address);
+			return { address: cached.address, ttl: cached.ttl || 0 };
+		}
+	} catch (error) {
+		// If KV is not available or error occurs, log and continue to DNS lookup
+		console.warn('KV cache lookup failed, falling back to DNS:', error.message);
+	}
+	console.log('No DNS cache hit for hostname:', hostname, '->', 'Resolving DNS...');
+
+	// Use Cloudflare DoH to resolve A records; Workers can always use fetch
+	const url = `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(hostname)}&type=A`;
+	const res = await fetch(url, { headers: { 'accept': 'application/dns-json' } });
+	if (!res.ok) {
+		throw new Error(`DNS query failed for ${hostname}: HTTP ${res.status}`);
+	}
+	const data = await res.json();
+	const answers = Array.isArray(data?.Answer) ? data.Answer : [];
+	const firstA = answers.find(a => a.type === 1 && a.data && ipv4Regex.test(a.data));
+	if (!firstA) {
+		throw new Error(`No IPv4 A record found for ${hostname}`);
+	}
+
+	console.log('Resolved IPv4 address for hostname:', hostname, firstA.data, answers[0]?.TTL);
+
+	// Cap TTL to a reasonable upper bound to avoid long stale entries
+	const ttlSeconds = Math.max(30, Math.min(answers[0]?.TTL ?? 60, 300));
+
+	// Store in KV cache with expiration
+	try {
+		console.log('Storing DNS resolution for hostname:', hostname, 'in KV cache with TTL:', ttlSeconds, 'seconds under key:', cacheKey);
+		await KV.put(
+			cacheKey,
+			{ address: firstA.data, resolvedAt: Date.now() },
+			env,
+			{ expirationTtl: ttlSeconds }
+		);
+		console.log('Stored DNS resolution in KV cache with TTL:', ttlSeconds, 'seconds');
+	} catch (error) {
+		// If KV write fails, log warning but continue
+		console.warn('Failed to store DNS resolution in KV cache:', error.message);
+	}
+
+	return { address: firstA.data, ttl: ttlSeconds };
+}
+
+/**
+ * Initialize the adapter with environment variables
+ * Must be called before using any adapter functions
+ * @param {Object} environment - Cloudflare environment variables
+ */
+export const initialize = (environment) => {
+	env = environment || process.env;
+	console.log('Database adapter initialized with environment');
+};
 
 /**
  * Load and configure Sequelize instance for MSSQL
  * Adapted from Lambda version for Cloudflare Workers
- * @param {Object} env - Cloudflare environment variables
  * @returns {Promise<Sequelize>} Configured Sequelize instance
  */
-const loadSequelize = async (env) => {
+const loadSequelize = async () => {
+	if (!env) {
+		// Fallback to process.env if not initialized
+		env = process.env;
+		console.warn('Adapter not initialized, using process.env as fallback');
+	}
+
 	const config = {
 		host: env.DATABASE_HOST,
 		database: env.DATABASE_NAME,
@@ -21,12 +112,15 @@ const loadSequelize = async (env) => {
 		trustServerCertificate: env.DATABASE_TRUST_CERT === 'true', // For self-signed certs
 	};
 
-	console.log(`Connecting to MSSQL server: ${config.host}:${config.port}, database: ${config.database}`);
+	// Resolve hostname to IPv4 explicitly (Workers lack Node dns; also avoid AAAA issues)
+	const { address: resolvedAddress } = await resolveIPv4Address(config.host);
+	const targetServer = resolvedAddress || config.host;
+	console.log(`Connecting to MSSQL server: ${config.host} -> ${targetServer}:${config.port}, database: ${config.database}`);
 
 	const sequelizeInstance = new Sequelize({
 		dialect: MsSqlDialect,
 		tediousModule: tedious,
-		server: config.host,
+		server: targetServer,
 		port: parseInt(config.port),
 		database: config.database,
 		authentication: {
@@ -66,10 +160,16 @@ const loadSequelize = async (env) => {
 /**
  * Get or create Sequelize instance
  * Cloudflare Workers can reuse connections across requests
- * @param {Object} env - Cloudflare environment variables
+ * @param {boolean} createInstanceIfNotExists - Whether to create instance if it doesn't exist
  * @returns {Promise<Sequelize>} Sequelize instance
  */
 export const getSequelize = async (createInstanceIfNotExists = true) => {
+	if (!env) {
+		// Fallback to process.env if not initialized
+		env = process.env;
+		console.warn('Adapter not initialized, using process.env as fallback');
+	}
+
 	// Useful to simply see if the connection is already established or not without creating a new instance
 	if(!sequelize && !createInstanceIfNotExists){
 		return null;
@@ -77,7 +177,7 @@ export const getSequelize = async (createInstanceIfNotExists = true) => {
 
 	if (!sequelize) {
 		console.log('Creating new sequelize connection');
-		sequelize = await loadSequelize(process.env);
+		sequelize = await loadSequelize();
 	} else {
 		console.log('Reusing existing sequelize connection');
 		// Test connection to ensure it's still alive
@@ -85,7 +185,7 @@ export const getSequelize = async (createInstanceIfNotExists = true) => {
 			await sequelize.authenticate();
 		} catch (error) {
 			console.log('Connection lost, recreating...');
-			sequelize = await loadSequelize(process.env);
+			sequelize = await loadSequelize();
 		}
 	}
 	return sequelize;
@@ -93,11 +193,10 @@ export const getSequelize = async (createInstanceIfNotExists = true) => {
 
 /**
  * Get a Sequelize transaction
- * @param {Object} env - Cloudflare environment variables
  * @returns {Promise<Transaction>} Sequelize transaction
  */
-export const getSequelizeTransaction = async (env) => {
-	const sequelizeInstance = await getSequelize(env);
+export const getSequelizeTransaction = async () => {
+	const sequelizeInstance = await getSequelize();
 	console.log('Creating new sequelize transaction');
 	return sequelizeInstance.transaction();
 };
@@ -115,6 +214,7 @@ export const closeSequelize = async () => {
 };
 
 export default {
+	initialize,
 	getSequelize,
 	getSequelizeTransaction,
 	closeSequelize,

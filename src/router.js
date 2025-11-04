@@ -1,5 +1,6 @@
 import { Router } from 'itty-router';
 import { formatSuccessResponse, formatErrorResponse } from './utils/helpers.js';
+import sequelizeAdapter from './db/adapter.js';
 
 // Import middleware
 // import { dbMiddleware } from './middleware/db.js';
@@ -14,6 +15,9 @@ import { setupActionsRoutes } from './routes/actions.js';
  * @returns {Router} Configured router instance
  */
 export function createRouter(env) {
+	// Initialize the database adapter with environment variables
+	sequelizeAdapter.initialize(env);
+
 	const router = Router();
 
 	// Apply database middleware to all routes using itty-router's middleware pattern
