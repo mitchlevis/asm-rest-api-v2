@@ -9,6 +9,7 @@ import crypto from 'crypto';
 // 1. formatSuccessResponse(request, data, statusCode)
 // 2. formatSuccessResponse(request, { data, statusCode, extraHeaders, keepDBAlive, responseSchema })
 export const formatSuccessResponse = async (request, dataOrOptions, statusCodeParam = undefined) => {
+console.log('formatSuccessResponse', request, dataOrOptions, statusCodeParam);
 	const sequelize = await sequelizeAdapter.getSequelize(false);
 
 	// Handle both call patterns
@@ -30,7 +31,15 @@ export const formatSuccessResponse = async (request, dataOrOptions, statusCodePa
 		responseSchema = dataOrOptions?.responseSchema;
 	}
 
-	const headers = extraHeaders && Object.keys(extraHeaders).length > 0 ? { ...request.headers, ...extraHeaders } : request.headers;
+	// Convert Headers object to plain object and merge with extraHeaders
+	const headers = { ...extraHeaders };
+
+	// Add CORS Headers - use specific origin when credentials are involved
+	const origin = request.headers.get('Origin');
+	headers['Access-Control-Allow-Origin'] = origin || '*';
+	headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH';
+	headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization';
+	headers['Access-Control-Allow-Credentials'] = 'true';
 
 	// Response validation (if schema provided)
 	if (responseSchema) {
@@ -82,6 +91,7 @@ export const formatSuccessResponse = async (request, dataOrOptions, statusCodePa
 
 // Format an error response
 export const formatErrorResponse = async (request, error) => {
+console.log('formatErrorResponse', request, error);
 	const sequelize = await sequelizeAdapter.getSequelize(false);
 
 	let statusCode = 500;
@@ -122,9 +132,17 @@ export const formatErrorResponse = async (request, error) => {
 		errorObject = { statusCode: 400, message: `SequelizeEagerLoadingError - ${error.message}` };
 	}
 
+	const headers = { 'Content-Type': 'application/json' };
+	// Add CORS Headers - use specific origin when credentials are involved
+	const origin = request.headers.get('Origin');
+	headers['Access-Control-Allow-Origin'] = origin || '*';
+	headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH';
+	headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization';
+	headers['Access-Control-Allow-Credentials'] = 'true';
+
 	return Response.json(errorObject, {
 		status: statusCode,
-		headers: { ...request.headers, ...{ 'Content-Type': 'application/json' } },
+		headers: headers,
 	});
 }
 
