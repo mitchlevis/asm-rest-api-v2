@@ -9,7 +9,7 @@ import crypto from 'crypto';
 // 1. formatSuccessResponse(request, data, statusCode)
 // 2. formatSuccessResponse(request, { data, statusCode, extraHeaders, keepDBAlive, responseSchema })
 export const formatSuccessResponse = async (request, dataOrOptions, statusCodeParam = undefined) => {
-console.log('formatSuccessResponse', request, dataOrOptions, statusCodeParam);
+// console.log('formatSuccessResponse', request, dataOrOptions, statusCodeParam);
 	const sequelize = await sequelizeAdapter.getSequelize(false);
 
 	// Handle both call patterns
