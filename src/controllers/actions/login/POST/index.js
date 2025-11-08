@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import dayjs from 'dayjs';
-import { validateIncomingParameters, getDbObject, encryptSHA256Managed, convertPropertiesToCamelCase, formatSuccessResponse, formatErrorResponse, throwError } from '../../../utils/helpers';
+import { validateIncomingParameters, getDbObject, encryptSHA256Managed, convertPropertiesToCamelCase, formatSuccessResponse, formatErrorResponse, throwError } from '../../../../utils/helpers';
 import * as requestValidationSchema from "./request";
 
 export default async (request) => {

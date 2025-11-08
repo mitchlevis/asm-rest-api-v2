@@ -1,7 +1,7 @@
 import { Router } from 'itty-router';
 import { formatSuccessResponse, formatErrorResponse } from './utils/helpers.js';
 import sequelizeAdapter from './db/adapter.js';
-
+import { usePosthog } from './services/posthog.js';
 // Import middleware
 // import { dbMiddleware } from './middleware/db.js';
 
@@ -14,9 +14,13 @@ import { setupActionsRoutes } from './routes/actions.js';
  * @param {Object} env - Cloudflare environment variables
  * @returns {Router} Configured router instance
  */
-export function createRouter(env) {
+export function createRouter(request, env, ctx) {
 	// Initialize the database adapter with environment variables
 	sequelizeAdapter.initialize(env);
+
+	// Initialize Posthog
+	const posthog = usePosthog();
+	posthog.initialize(request, env, ctx);
 
 	const router = Router();
 
@@ -36,7 +40,7 @@ export function createRouter(env) {
 		const origin = request.headers.get('Origin');
 		headers['Access-Control-Allow-Origin'] = origin || '*';
 		headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH';
-		headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, x-session-token, X-Session-Token, x-username, X-Username';
+		headers['Access-Control-Allow-Headers'] = 'Content-Type, authorization, Authorization, x-session-token, X-Session-Token, x-username, X-Username';
 		headers['Access-Control-Allow-Credentials'] = 'true';
 console.log('headers', JSON.stringify(headers, null, 2));
 		return new Response('OK', { status: 200, headers: headers });

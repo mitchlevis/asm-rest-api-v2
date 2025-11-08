@@ -18,7 +18,7 @@ export default {
 	async fetch(request, env, ctx) {
 		// Initialize router if not already created
 		if (!router) {
-			router = createRouter(env);
+			router = createRouter(request, env, ctx);
 		}
 
 		try {

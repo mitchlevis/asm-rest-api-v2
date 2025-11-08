@@ -3,6 +3,7 @@ import { MODELS, MODEL_ASSOCIATIONS } from '../db/models';
 import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
+import { usePosthog } from '../services/posthog.js';
 
 // Format a success response
 // Supports two call patterns:
@@ -38,7 +39,7 @@ export const formatSuccessResponse = async (request, dataOrOptions, statusCodePa
 	const origin = request.headers.get('Origin');
 	headers['Access-Control-Allow-Origin'] = origin || '*';
 	headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH';
-	headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, x-session-token, X-Session-Token, x-username, X-Username';
+	headers['Access-Control-Allow-Headers'] = 'Content-Type, authorization, Authorization, x-session-token, X-Session-Token, x-username, X-Username';
 	headers['Access-Control-Allow-Credentials'] = 'true';
 console.log('headers', JSON.stringify(headers, null, 2));
 	// Response validation (if schema provided)
@@ -92,6 +93,11 @@ console.log('headers', JSON.stringify(headers, null, 2));
 // Format an error response
 export const formatErrorResponse = async (request, error) => {
 console.log('formatErrorResponse', request, error);
+
+	// Send Error to Posthog
+	const posthog = usePosthog();
+	await posthog.captureError(request, error);
+
 	const sequelize = await sequelizeAdapter.getSequelize(false);
 
 	let statusCode = 500;
@@ -137,7 +143,7 @@ console.log('formatErrorResponse', request, error);
 	const origin = request.headers.get('Origin');
 	headers['Access-Control-Allow-Origin'] = origin || '*';
 	headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH';
-	headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization';
+	headers['Access-Control-Allow-Headers'] = 'Content-Type, authorization, Authorization, x-session-token, X-Session-Token, x-username, X-Username';
 	headers['Access-Control-Allow-Credentials'] = 'true';
 console.log('headers', JSON.stringify(headers, null, 2));
 	return Response.json(errorObject, {
@@ -149,6 +155,35 @@ console.log('headers', JSON.stringify(headers, null, 2));
 export const throwError = async (statusCode, message) => {
   return Promise.reject({ statusCode, message });
 }
+
+export const authenticate = async (request) => {
+	const API_KEYS = process.env.API_KEYS;
+
+  if(!request.headers.get('authorization') || request.headers.get('authorization') === ''){
+    console.log('Missing Authorization Header - Returning 401');
+    await throwError(401, 'Unauthorized');
+  }
+  const authHeader = request.headers.get('authorization');
+	let apiKeys = [];
+	try{
+		apiKeys = JSON.parse(API_KEYS);
+	} catch(error){
+		console.error('Error parsing API Keys:', error);
+		await throwError(401, 'Unauthorized IAK');
+	}
+
+  let authorized = false;
+  for(const entry of apiKeys){
+    if(authHeader === entry.key){
+      authorized = true;
+      break;
+    }
+  }
+  if(!authorized){
+    console.log('Invalid API Key - Returning 401');
+    await throwError(401, 'Unauthorized');
+  }
+};
 
 export const authenticateSessionToken = async (request) => {
 
@@ -268,6 +303,7 @@ const formatZodError = (error) => {
 
 // Function to validate parameters (path, query, body) against a Zod schema
 export const validateIncomingParameters = async (request, parameters) => {
+	const posthog = usePosthog();
 	const { path, query, body } = parameters;
 
 	const validatedParameters = { path: null, query: null, body: null };
@@ -346,6 +382,13 @@ export const validateIncomingParameters = async (request, parameters) => {
 			await throwError(400, `Invalid Body Parameters - ${error.message || 'Unknown error'}`);
 		}
 	}
+
+	// Capture the API request event
+	posthog.capture(request, 'api_request', {
+		path: validatedParameters.path,
+		query: validatedParameters.query,
+		body: validatedParameters.body,
+	})
 
 	return { path: validatedParameters.path, query: validatedParameters.query, body: validatedParameters.body };
 };
