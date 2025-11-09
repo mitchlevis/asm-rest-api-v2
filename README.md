@@ -42,4 +42,20 @@ Routes are configured in `wrangler.jsonc` with custom domains for preview and pr
 - Node.js 18+ and npm
 - Cloudflare account (Wrangler runs from devDependencies)
 
+### MCP Cloudflare Server
 
+- Install Cloudflare MCP Server
+
+```bash
+npx @cloudflare/mcp-server-cloudflare init
+```
+*Follow instructions to sign in and authenticate your computer on CF*
+
+- Open Cursor Settings and go to 'Tools & MCP' and add the following entry:
+```json
+"cloudflare-asm": {
+	"command": "npx",
+	"args": ["@cloudflare/mcp-server-cloudflare", "run", "CHANGE_THIS_TO_THE_ACCOUNT_ID"]
+}
+```
+- Restart Cursor
