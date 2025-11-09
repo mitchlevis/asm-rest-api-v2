@@ -20,14 +20,14 @@ export default async (request) => {
     }
 
 		// Get the User
-    const userModel = await getDbObject('User');
+    const userModel = await getDbObject('User', true, request);
     const user = await userModel.findOne({ where: { Username: userId }});
     if(!user){
       await throwError(404, `User ${userId} not found`);
     }
 
 		// Get the MAX WallPostId for the user (if none, set to 1)
-    const wallPostModel = await getDbObject('WallPost');
+    const wallPostModel = await getDbObject('WallPost', true, request);
     const maxWallPostId = await wallPostModel.max('WallPostId', { where: { UserId: userId }});
     const nextWallPostId = maxWallPostId ? maxWallPostId + 1 : 1;
 

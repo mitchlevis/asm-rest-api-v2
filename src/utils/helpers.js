@@ -8,27 +8,24 @@ import { usePosthog } from '../services/posthog.js';
 // Format a success response
 // Supports two call patterns:
 // 1. formatSuccessResponse(request, data, statusCode)
-// 2. formatSuccessResponse(request, { data, statusCode, extraHeaders, keepDBAlive, responseSchema })
+// 2. formatSuccessResponse(request, { data, statusCode, extraHeaders, responseSchema })
 export const formatSuccessResponse = async (request, dataOrOptions, statusCodeParam = undefined) => {
 // console.log('formatSuccessResponse', request, dataOrOptions, statusCodeParam);
-	const sequelize = await sequelizeAdapter.getSequelize(false);
 
 	// Handle both call patterns
-	let data, statusCode, extraHeaders, keepDBAlive, responseSchema;
+	let data, statusCode, extraHeaders, responseSchema;
 
 	if (Array.isArray(dataOrOptions) || (typeof dataOrOptions !== 'object' && dataOrOptions !== undefined)) {
 		// Pattern 1: formatSuccessResponse(request, data, statusCode)
 		data = dataOrOptions;
 		statusCode = statusCodeParam || 200;
 		extraHeaders = {};
-		keepDBAlive = false;
 		responseSchema = undefined;
 	} else {
 		// Pattern 2: formatSuccessResponse(request, { data, statusCode, ... })
 		data = dataOrOptions?.data;
 		statusCode = dataOrOptions?.statusCode || 200;
 		extraHeaders = dataOrOptions?.extraHeaders || {};
-		keepDBAlive = dataOrOptions?.keepDBAlive || false;
 		responseSchema = dataOrOptions?.responseSchema;
 	}
 
@@ -55,10 +52,6 @@ console.log('headers', JSON.stringify(headers, null, 2));
 
 				if (validationMode === 'strict') {
 					// In strict mode (development/test), close connection and throw formatted error
-					if(sequelize && !keepDBAlive){
-						console.log('Closing Sequelize connection');
-						await sequelize.close();
-					}
 					console.error(validationError);
 					console.error('Response data:', JSON.stringify(data, null, 2));
 					// Throw error object that formatErrorResponse can handle
@@ -78,11 +71,8 @@ console.log('headers', JSON.stringify(headers, null, 2));
 		}
 	}
 
-	// Close the Sequelize connection before returning the response
-	if(sequelize && !keepDBAlive){
-		console.log('Closing Sequelize connection');
-		await sequelize.close();
-	}
+	// Always close the Sequelize connection before returning the response
+	await sequelizeAdapter.closeSequelize(request);
 
 	return Response.json(data, {
 		status: statusCode,
@@ -98,15 +88,11 @@ console.log('formatErrorResponse', request, error);
 	const posthog = usePosthog();
 	await posthog.captureError(request, error);
 
-	const sequelize = await sequelizeAdapter.getSequelize(false);
+	// Always close the Sequelize connection before returning the response
+	await sequelizeAdapter.closeSequelize(request);
 
 	let statusCode = 500;
   let errorObject = { statusCode: 500, message: 'Unknown Server Error' };
-
-	if(sequelize){
-		console.log('Closing Sequelize connection');
-		await sequelize.close();
-	}
 
 	// Check if error is a custom error object
 	if(error.statusCode){
@@ -201,8 +187,8 @@ export const authenticateSessionToken = async (request) => {
   const session_token = request.headers.get('x-session-token');
   const username = request.headers.get('x-username');
 
-  const userModel = await getDbObject('User');
-  const sessionTokenModel = await getDbObject('SessionToken');
+  const userModel = await getDbObject('User', true, request);
+  const sessionTokenModel = await getDbObject('SessionToken', true, request);
 
   const userPromise = userModel.findOne({ where: { Username: username } })
     .then(async(res) => {
@@ -384,33 +370,37 @@ export const validateIncomingParameters = async (request, parameters) => {
 	}
 
 	// Capture the API request event
-	posthog.capture(request, 'api_request', {
-		path: validatedParameters.path,
-		query: validatedParameters.query,
-		body: validatedParameters.body,
-	})
+	// posthog.capture(request, 'api_request', {
+	// 	path: validatedParameters.path,
+	// 	query: validatedParameters.query,
+	// 	body: validatedParameters.body,
+	// })
 
 	return { path: validatedParameters.path, query: validatedParameters.query, body: validatedParameters.body };
 };
 
 // Get a Sequelize object
-export const getSequelizeObject = async () => {
-  const sequelize = await sequelizeAdapter.getSequelize();
+export const getSequelizeObject = async (request) => {
+  const sequelize = await sequelizeAdapter.getSequelize(request);
   return sequelize;
 }
 
 // Get a Sequelize transaction
-export const getSequelizeTransaction = async () => {
-  const transaction = await sequelizeAdapter.getSequelizeTransaction();
+export const getSequelizeTransaction = async (request) => {
+  const transaction = await sequelizeAdapter.getSequelizeTransaction(request);
   return transaction;
 };
 
 // Get a Model
-export const getDbObject = async (resourceName, includeAssociations = true) => {
+export const getDbObject = async (resourceName, includeAssociations = true, request = null) => {
   // Dynamically import the model
   const model = MODELS[resourceName];
 
-  const sequelize = await sequelizeAdapter.getSequelize();
+  if (!request) {
+    throw new Error('getDbObject requires a request parameter');
+  }
+
+  const sequelize = await sequelizeAdapter.getSequelize(request);
 
   const dbObject = sequelize.define(resourceName, model, { tableName: resourceName, timestamps: false});
 
@@ -526,3 +516,18 @@ export const convertPropertiesToCamelCase = (obj) => {
 
   return result;
 };
+
+// Check if the region user is executive
+export const isRegionUserExecutive = async (regionUser) => {
+  let positions = [];
+  try{
+    positions = JSON.parse(regionUser.Positions || '[]');
+  }
+  catch(err){
+    console.error('Error parsing positions:', err);
+    return false;
+  }
+
+  // chief, assignor, manager, coach
+  return regionUser.IsExecutive || positions.includes('chief') || positions.includes('assignor') || positions.includes('manager') || positions.includes('coach');
+}

@@ -18,7 +18,7 @@ export default async (request) => {
     const limit = query.limit;
     const offset = query.offset;
 
-		const regionUserModel = await getDbObject('RegionUser');
+		const regionUserModel = await getDbObject('RegionUser', true, request);
     const whereObject = { RealUsername: userId };
     if(regionId){
       whereObject.regionId = regionId;
@@ -43,7 +43,7 @@ export default async (request) => {
 
 		const SQL = getQuery(usersForRegionsArray, sortDirection, limit, offset);
 
-		const sequelize = await getSequelizeObject();
+		const sequelize = await getSequelizeObject(request);
     const queryResult = await sequelize.query(SQL, { type: sequelize.QueryTypes.SELECT });
 
     const response = await formatResult(queryResult).catch((err) => { console.error(err); return throwError(500, 'SQL Error - Could not format response') });

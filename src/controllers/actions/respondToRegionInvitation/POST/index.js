@@ -15,14 +15,14 @@ export default async (request) => {
 		const { regionId, accept } = body;
 
 		// Get the User
-    const userModel = await getDbObject('User');
+    const userModel = await getDbObject('User', true, request);
     const user = await userModel.findOne({ where: { Username: userId }});
     if(!user){
       await throwError(404, `User ${userId} not found`);
     }
 
     // Get Region User by RegionId and Email
-    const regionUserModel = await getDbObject('RegionUser');
+    const regionUserModel = await getDbObject('RegionUser', true, request);
     const regionUser = await regionUserModel.findOne({ where: { RegionId: regionId, Email: user.Email }});
     if(!regionUser){
       await throwError(404, `User ${userId} does not belong to region ${regionId}`);
@@ -34,7 +34,7 @@ export default async (request) => {
     }
 
     // Let's check if there is a Notification from this Region - If so, we update the IsViewed and Denied
-    const friendNotificationModel = await getDbObject('FriendNotification');
+    const friendNotificationModel = await getDbObject('FriendNotification', true, request);
     const friendNotification = await friendNotificationModel.findOne({ where: { FriendId: regionId, FriendUsername: regionUser.Username }});
     if(friendNotification){
       await friendNotificationModel.update({ IsViewed: true, Denied: !accept }, { where: { FriendId: regionId, FriendUsername: regionUser.Username }});

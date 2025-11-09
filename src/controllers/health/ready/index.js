@@ -6,7 +6,7 @@ export default async (request) => {
 	try{
 		const { path, query, body } = await validateIncomingParameters(request, requestValidationSchema);
 
-		const sequelize = await getSequelizeObject();
+		const sequelize = await getSequelizeObject(request);
 
 		if (sequelize) {
 			try {
