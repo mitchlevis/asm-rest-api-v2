@@ -202,25 +202,49 @@ const loadSequelize = async () => {
 	});
 
 	try {
+		console.log('Attempting database connection...');
+		const startTime = Date.now();
 		await sequelizeInstance.authenticate();
-		console.log('Database connection established successfully');
+		const connectionTime = Date.now() - startTime;
+		console.log(`Database connection established successfully in ${connectionTime}ms`);
 	} catch (authError) {
-		console.error('Database authentication failed:', {
+		const errorMessage = authError.message || String(authError);
+		const isConnectionError = errorMessage.includes('Could not connect') ||
+		                          errorMessage.includes('sequence') ||
+		                          errorMessage.includes('ECONNREFUSED') ||
+		                          errorMessage.includes('ETIMEDOUT');
+
+		console.error('Database connection failed:', {
 			host: config.host,
 			targetServer,
 			port: config.port,
 			database: config.database,
 			username: config.user,
 			hasPassword: !!config.password,
-			error: authError.message,
+			error: errorMessage,
+			errorType: isConnectionError ? 'NETWORK_CONNECTION' : 'AUTHENTICATION',
 		});
-		// Close the instance if authentication fails
+
+		// Close the instance if connection fails
 		try {
 			await sequelizeInstance.close();
 		} catch (closeError) {
 			// Ignore close errors
 		}
-		throw new Error(`Database connection failed: ${authError.message}. Check that DATABASE_PASSWORD secret is configured for this environment.`);
+
+		if (isConnectionError) {
+			throw new Error(
+				`Database connection failed: Unable to establish TCP connection to ${targetServer}:${config.port}. ` +
+				`This is likely a network/firewall issue. Possible causes:\n` +
+				`1. Database server firewall/IP allowlisting may be blocking Cloudflare Workers IP ranges\n` +
+				`2. Network routing differences between manual and automatic deployments\n` +
+				`3. Database server may not be accessible from Cloudflare's network\n` +
+				`Solution: Check database server firewall rules and ensure Cloudflare IP ranges are allowed. ` +
+				`Consider enabling Smart Placement in wrangler.jsonc to route workers closer to your database.`
+			);
+		} else {
+			throw new Error(`Database authentication failed: ${errorMessage}. Check that DATABASE_PASSWORD secret is configured correctly for this environment.`);
+		}
 	}
 	return sequelizeInstance;
 };

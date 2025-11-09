@@ -98,8 +98,10 @@
 	/**
 	 * Smart Placement
 	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
+	 * Enabling smart placement routes workers closer to resources they connect to (like databases)
+	 * This may help with connection issues during automatic deployments
 	 */
-	// "placement": { "mode": "smart" }
+	"placement": { "mode": "smart" },
 	/**
 	 * Bindings
 	 * Bindings allow your Worker to interact with resources on the Cloudflare Developer Platform, including
