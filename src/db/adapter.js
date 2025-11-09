@@ -45,39 +45,56 @@ async function resolveIPv4Address(hostname) {
 	console.log('No DNS cache hit for hostname:', hostname, '->', 'Resolving DNS...');
 
 	// Use Cloudflare DoH to resolve A records; Workers can always use fetch
-	const url = `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(hostname)}&type=A`;
-	const res = await fetch(url, { headers: { 'accept': 'application/dns-json' } });
-	if (!res.ok) {
-		throw new Error(`DNS query failed for ${hostname}: HTTP ${res.status}`);
-	}
-	const data = await res.json();
-	const answers = Array.isArray(data?.Answer) ? data.Answer : [];
-	const firstA = answers.find(a => a.type === 1 && a.data && ipv4Regex.test(a.data));
-	if (!firstA) {
-		throw new Error(`No IPv4 A record found for ${hostname}`);
-	}
+	// Add timeout using AbortController to prevent hanging
+	const controller = new AbortController();
+	const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-	console.log('Resolved IPv4 address for hostname:', hostname, firstA.data, answers[0]?.TTL);
-
-	// Cap TTL to a reasonable upper bound to avoid long stale entries
-	const ttlSeconds = Math.max(30, Math.min(answers[0]?.TTL ?? 60, 300));
-
-	// Store in KV cache with expiration
 	try {
-		console.log('Storing DNS resolution for hostname:', hostname, 'in KV cache with TTL:', ttlSeconds, 'seconds under key:', cacheKey);
-		await KV.put(
-			cacheKey,
-			{ address: firstA.data, resolvedAt: Date.now() },
-			env,
-			{ expirationTtl: ttlSeconds }
-		);
-		console.log('Stored DNS resolution in KV cache with TTL:', ttlSeconds, 'seconds');
-	} catch (error) {
-		// If KV write fails, log warning but continue
-		console.warn('Failed to store DNS resolution in KV cache:', error.message);
-	}
+		const url = `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(hostname)}&type=A`;
+		const res = await fetch(url, {
+			headers: { 'accept': 'application/dns-json' },
+			signal: controller.signal
+		});
+		clearTimeout(timeoutId);
 
-	return { address: firstA.data, ttl: ttlSeconds };
+		if (!res.ok) {
+			throw new Error(`DNS query failed for ${hostname}: HTTP ${res.status}`);
+		}
+		const data = await res.json();
+		const answers = Array.isArray(data?.Answer) ? data.Answer : [];
+		const firstA = answers.find(a => a.type === 1 && a.data && ipv4Regex.test(a.data));
+		if (!firstA) {
+			throw new Error(`No IPv4 A record found for ${hostname}`);
+		}
+
+		console.log('Resolved IPv4 address for hostname:', hostname, firstA.data, answers[0]?.TTL);
+
+		// Cap TTL to a reasonable upper bound to avoid long stale entries
+		const ttlSeconds = Math.max(30, Math.min(answers[0]?.TTL ?? 60, 300));
+
+		// Store in KV cache with expiration
+		try {
+			console.log('Storing DNS resolution for hostname:', hostname, 'in KV cache with TTL:', ttlSeconds, 'seconds under key:', cacheKey);
+			await KV.put(
+				cacheKey,
+				{ address: firstA.data, resolvedAt: Date.now() },
+				env,
+				{ expirationTtl: ttlSeconds }
+			);
+			console.log('Stored DNS resolution in KV cache with TTL:', ttlSeconds, 'seconds');
+		} catch (error) {
+			// If KV write fails, log warning but continue
+			console.warn('Failed to store DNS resolution in KV cache:', error.message);
+		}
+
+		return { address: firstA.data, ttl: ttlSeconds };
+	} catch (fetchError) {
+		clearTimeout(timeoutId);
+		if (fetchError.name === 'AbortError' || fetchError.message?.includes('aborted')) {
+			throw new Error(`DNS resolution timeout for ${hostname}: Request took longer than 10 seconds`);
+		}
+		throw new Error(`DNS resolution failed for ${hostname}: ${fetchError.message}`);
+	}
 }
 
 /**
@@ -88,6 +105,18 @@ async function resolveIPv4Address(hostname) {
 export const initialize = (environment) => {
 	env = environment || process.env;
 	console.log('Database adapter initialized with environment');
+	// Log environment info for debugging (without sensitive data)
+	console.log('Environment check:', {
+		hasDATABASE_HOST: !!env.DATABASE_HOST,
+		hasDATABASE_NAME: !!env.DATABASE_NAME,
+		hasDATABASE_USERNAME: !!env.DATABASE_USERNAME,
+		hasDATABASE_PASSWORD: !!env.DATABASE_PASSWORD,
+		DATABASE_HOST: env.DATABASE_HOST,
+		DATABASE_PORT: env.DATABASE_PORT,
+		DATABASE_NAME: env.DATABASE_NAME,
+		DATABASE_USERNAME: env.DATABASE_USERNAME,
+		ENVIRONMENT: env.ENVIRONMENT || 'unknown',
+	});
 };
 
 /**
@@ -102,6 +131,18 @@ const loadSequelize = async () => {
 		console.warn('Adapter not initialized, using process.env as fallback');
 	}
 
+	// Validate required environment variables before attempting connection
+	const requiredVars = ['DATABASE_HOST', 'DATABASE_NAME', 'DATABASE_USERNAME', 'DATABASE_PASSWORD'];
+	const missingVars = requiredVars.filter(varName => !env[varName]);
+
+	if (missingVars.length > 0) {
+		const errorMessage = `Missing required database environment variables: ${missingVars.join(', ')}. ` +
+			`For Cloudflare Workers, ensure secrets are configured in the dashboard for the production environment. ` +
+			`Set secrets using: wrangler secret put ${missingVars.find(v => v.includes('PASSWORD')) || 'SECRET_NAME'} --env production`;
+		console.error(errorMessage);
+		throw new Error(errorMessage);
+	}
+
 	const config = {
 		host: env.DATABASE_HOST,
 		database: env.DATABASE_NAME,
@@ -113,9 +154,17 @@ const loadSequelize = async () => {
 	};
 
 	// Resolve hostname to IPv4 explicitly (Workers lack Node dns; also avoid AAAA issues)
-	const { address: resolvedAddress } = await resolveIPv4Address(config.host);
-	const targetServer = resolvedAddress || config.host;
-	console.log(`Connecting to MSSQL server: ${config.host} -> ${targetServer}:${config.port}, database: ${config.database}`);
+	let resolvedAddress;
+	let targetServer;
+	try {
+		const resolution = await resolveIPv4Address(config.host);
+		resolvedAddress = resolution.address;
+		targetServer = resolvedAddress || config.host;
+		console.log(`Connecting to MSSQL server: ${config.host} -> ${targetServer}:${config.port}, database: ${config.database}`);
+	} catch (dnsError) {
+		console.error(`DNS resolution failed for ${config.host}:`, dnsError.message);
+		throw new Error(`Failed to resolve database hostname ${config.host}: ${dnsError.message}`);
+	}
 
 	const sequelizeInstance = new Sequelize({
 		dialect: MsSqlDialect,
@@ -152,8 +201,27 @@ const loadSequelize = async () => {
 		},
 	});
 
-	await sequelizeInstance.authenticate();
-	console.log('Database connection established successfully');
+	try {
+		await sequelizeInstance.authenticate();
+		console.log('Database connection established successfully');
+	} catch (authError) {
+		console.error('Database authentication failed:', {
+			host: config.host,
+			targetServer,
+			port: config.port,
+			database: config.database,
+			username: config.user,
+			hasPassword: !!config.password,
+			error: authError.message,
+		});
+		// Close the instance if authentication fails
+		try {
+			await sequelizeInstance.close();
+		} catch (closeError) {
+			// Ignore close errors
+		}
+		throw new Error(`Database connection failed: ${authError.message}. Check that DATABASE_PASSWORD secret is configured for this environment.`);
+	}
 	return sequelizeInstance;
 };
 
