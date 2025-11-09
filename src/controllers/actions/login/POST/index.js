@@ -14,7 +14,7 @@ export default async (request) => {
     const isEmail = username.includes('@');
 
 		// Get the User
-    const userModel = await getDbObject('User');
+    const userModel = await getDbObject('User', true, request);
     let user = null;
     if(isEmail){
       user = await userModel.findOne({ where: { Email: username }, raw: true });
@@ -35,7 +35,7 @@ export default async (request) => {
     }
 
 		// Create a session token
-    const sessionTokenModel = await getDbObject('SessionToken');
+    const sessionTokenModel = await getDbObject('SessionToken', true, request);
     const sessionToken = await sessionTokenModel.create({
       UserName: user.Username,
       SessionToken: uuidv4(),

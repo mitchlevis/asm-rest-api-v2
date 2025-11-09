@@ -17,8 +17,8 @@ export default async (request) => {
       await throwError(400, 'Invalid Request. Missing username');
     }
 
-    const userModel = await getDbObject('User');
-    const sessionTokenModel = await getDbObject('SessionToken');
+    const userModel = await getDbObject('User', true, request);
+    const sessionTokenModel = await getDbObject('SessionToken', true, request);
 
     // Get user
     const user = await userModel.findOne({ where: { Username: username } });

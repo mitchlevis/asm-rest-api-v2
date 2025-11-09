@@ -3,7 +3,8 @@ import { MsSqlDialect } from '@sequelize/mssql';
 import * as tedious from 'tedious';
 import KV from '../services/KV.js';
 
-let sequelize = null;
+// WeakMap to store Sequelize instances per request
+const sequelizeInstances = new WeakMap();
 let env = null; // Store env reference for use across adapter functions
 
 const ipv4Regex = /^(?:\d{1,3}\.){3}\d{1,3}$/;
@@ -185,9 +186,8 @@ const loadSequelize = async () => {
 		requestTimeout: 300000, // 5 minutes request timeout
 		// Note: MSSQL always returns dates as UTC, timezone option is not supported
 		pool: {
-			// Cloudflare Workers handle concurrency differently than Lambda
-			// Workers can process multiple requests concurrently, so adjust max accordingly
-			max: 5, // Adjust based on your expected concurrency
+			// Each request gets its own connection instance, so pool size is 1 per request
+			max: 1, // 1 request = 1 connection
 			min: 0, // Start with 0 connections (connection on demand)
 			acquire: 30000, // Connection acquisition timeout (30 seconds)
 			idle: 10000, // Idle connection timeout
@@ -250,58 +250,70 @@ const loadSequelize = async () => {
 };
 
 /**
- * Get or create Sequelize instance
- * Cloudflare Workers can reuse connections across requests
+ * Get or create Sequelize instance for a specific request
+ * Each request gets its own isolated connection to prevent concurrency issues
+ * @param {Request} request - The request object (used as WeakMap key)
  * @param {boolean} createInstanceIfNotExists - Whether to create instance if it doesn't exist
- * @returns {Promise<Sequelize>} Sequelize instance
+ * @returns {Promise<Sequelize|null>} Sequelize instance or null if createInstanceIfNotExists is false and no instance exists
  */
-export const getSequelize = async (createInstanceIfNotExists = true) => {
+export const getSequelize = async (request, createInstanceIfNotExists = true) => {
 	if (!env) {
 		// Fallback to process.env if not initialized
 		env = process.env;
 		console.warn('Adapter not initialized, using process.env as fallback');
 	}
 
-	// Useful to simply see if the connection is already established or not without creating a new instance
-	if(!sequelize && !createInstanceIfNotExists){
-		return null;
+	if (!request) {
+		throw new Error('getSequelize requires a request parameter');
 	}
 
+	// Check if we already have an instance for this request
+	let sequelize = sequelizeInstances.get(request);
+
 	if (!sequelize) {
-		console.log('Creating new sequelize connection');
-		sequelize = await loadSequelize();
-	} else {
-		console.log('Reusing existing sequelize connection');
-		// Test connection to ensure it's still alive
-		try {
-			await sequelize.authenticate();
-		} catch (error) {
-			console.log('Connection lost, recreating...');
-			sequelize = await loadSequelize();
+		if (!createInstanceIfNotExists) {
+			return null;
 		}
+		console.log('Creating new sequelize connection for request');
+		sequelize = await loadSequelize();
+		sequelizeInstances.set(request, sequelize);
+	} else {
+		console.log('Reusing existing sequelize connection for request');
 	}
+
 	return sequelize;
 };
 
 /**
- * Get a Sequelize transaction
+ * Get a Sequelize transaction for a specific request
+ * @param {Request} request - The request object (used to get the request's Sequelize instance)
  * @returns {Promise<Transaction>} Sequelize transaction
  */
-export const getSequelizeTransaction = async () => {
-	const sequelizeInstance = await getSequelize();
+export const getSequelizeTransaction = async (request) => {
+	const sequelizeInstance = await getSequelize(request);
 	console.log('Creating new sequelize transaction');
-	return sequelizeInstance.transaction();
+	return sequelizeInstance.startUnmanagedTransaction();
 };
 
 /**
- * Close Sequelize connection
- * Useful for cleanup or testing
+ * Close Sequelize connection for a specific request
+ * @param {Request} request - The request object (used to identify which connection to close)
  */
-export const closeSequelize = async () => {
+export const closeSequelize = async (request) => {
+	if (!request) {
+		console.warn('closeSequelize called without request parameter');
+		return;
+	}
+
+	const sequelize = sequelizeInstances.get(request);
 	if (sequelize) {
-		console.log('Closing sequelize connection');
-		await sequelize.close();
-		sequelize = null;
+		console.log('Closing sequelize connection for request');
+		try {
+			await sequelize.close();
+		} catch (error) {
+			console.error('Error closing sequelize connection:', error);
+		}
+		sequelizeInstances.delete(request);
 	}
 };
 

@@ -15,20 +15,20 @@ export default async (request) => {
 		const { WallPostUserId, WallPostId, Comment, ParentCommentId } = body;
 
 		 // Get the WallPost
-		 const wallPostModel = await getDbObject('WallPost');
+		 const wallPostModel = await getDbObject('WallPost', true, request);
 		 const wallPost = await wallPostModel.findOne({ where: { WallPostId: WallPostId, UserId: WallPostUserId }});
 		 if(!wallPost){
 			 await throwError(404, `Wall post ${WallPostId} not found`);
 		 }
 
-		 const userModel = await getDbObject('User');
+		 const userModel = await getDbObject('User', true, request);
 		 // Get the User
 		 const user = await userModel.findOne({ where: { Username: userId }});
 		 if(!user){
 			 await throwError(404, `User ${userId} not found`);
 		 }
 
-		 const wallPostCommentModel = await getDbObject('WallPostComment');
+		 const wallPostCommentModel = await getDbObject('WallPostComment', true, request);
 
 		 // Get the MAX CommentId for the Wall Post
 		 const maxCommentId = await wallPostCommentModel.max('CommentId', { where: { UserId: WallPostUserId, WallPostId: WallPostId }});
@@ -39,14 +39,14 @@ export default async (request) => {
 		 // If there is a parent comment, we need to get the parent comment
 		 if(ParentCommentId){
 			 // Get the ParentComment
-			 const parentCommentModel = await getDbObject('WallPostComment');
+			 const parentCommentModel = await getDbObject('WallPostComment', true, request);
 			 const parentComment = await parentCommentModel.findOne({ where: { CommentId: ParentCommentId, WallPostId: WallPostId, UserId: WallPostUserId }});
 			 if(!parentComment){
 				 await throwError(404, `Parent comment ${ParentCommentId} not found`);
 			 }
 
 			 // Get the MAX CommentCommentId for WallPostCommentComment
-			 const commentCommentModel = await getDbObject('WallPostCommentComment');
+			 const commentCommentModel = await getDbObject('WallPostCommentComment', true, request);
 			 const maxCommentCommentId = await commentCommentModel.max('CommentCommentId', { where: { CommentId: ParentCommentId, WallPostId: WallPostId, UserId: WallPostUserId }});
 			 const nextCommentCommentId = maxCommentCommentId ? maxCommentCommentId + 1 : 1;
 

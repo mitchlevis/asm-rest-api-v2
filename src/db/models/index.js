@@ -1,3 +1,5 @@
+import { Link, LinkAssociations } from './Link';
+import { LinkCategory, LinkCategoryAssociations } from './LinkCategory';
 import { FriendNotification, FriendNotificationAssociations } from './FriendNotification';
 import { Region, RegionAssociations } from './Region';
 import { RegionUser, RegionUserAssociations } from './RegionUser';
@@ -11,6 +13,8 @@ import { WallPostCommentLike, WallPostCommentLikeAssociations } from './WallPost
 import { WallPostLike, WallPostLikeAssociations } from './WallPostLike';
 
 const MODELS = {
+ Link,
+ LinkCategory,
  FriendNotification,
  Region,
  RegionUser,
@@ -25,6 +29,8 @@ const MODELS = {
 }
 
 const MODEL_ASSOCIATIONS = {
+ Link: LinkAssociations,
+ LinkCategory: LinkCategoryAssociations,
  FriendNotification: FriendNotificationAssociations,
  Region: RegionAssociations,
  RegionUser: RegionUserAssociations,

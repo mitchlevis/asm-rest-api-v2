@@ -5,12 +5,18 @@ import { validUser } from '../../fixtures/users.js';
 import { validSessionToken, expiredSessionToken } from '../../fixtures/session-tokens.js';
 
 // Mock the database adapter
-vi.mock('../../../src/db/adapter.js', () => ({
-	default: {
-		getSequelize: vi.fn(),
-	},
-	getSequelize: vi.fn(),
-}));
+vi.mock('../../../src/db/adapter.js', () => {
+	const getSequelize = vi.fn();
+	const closeSequelize = vi.fn();
+	return {
+		default: {
+			getSequelize,
+			closeSequelize,
+		},
+		getSequelize,
+		closeSequelize,
+	};
+});
 
 // Mock getDbObject to return mock models
 vi.mock('../../../src/db/models', () => ({
@@ -37,9 +43,12 @@ describe('formatSuccessResponse', () => {
 	beforeEach(async () => {
 		mockSequelizeInstance = mockSequelize(vi);
 		sequelizeAdapter = await import('../../../src/db/adapter.js');
-		// Reset and set up mock to return instance for getSequelize(false)
-		vi.mocked(sequelizeAdapter.getSequelize).mockImplementation(async (createIfNotExists) => {
+		// Reset and set up mock to return instance for getSequelize(request, false)
+		vi.mocked(sequelizeAdapter.getSequelize).mockImplementation(async (request, createIfNotExists) => {
 			return mockSequelizeInstance;
+		});
+		vi.mocked(sequelizeAdapter.closeSequelize).mockImplementation(async (request) => {
+			return mockSequelizeInstance.close();
 		});
 	});
 
@@ -50,20 +59,14 @@ describe('formatSuccessResponse', () => {
 	it('should format a success response with data', async () => {
 		const request = createMockRequest();
 		const data = { test: 'data' };
-		// Ensure sequelize instance is returned (getSequelize(false) is called)
-		vi.mocked(sequelizeAdapter.getSequelize).mockImplementation(async (createIfNotExists) => {
-			if (createIfNotExists === false) {
-				return mockSequelizeInstance;
-			}
-			return mockSequelizeInstance;
-		});
 
 		const response = await formatSuccessResponse(request, { data });
 
 		expect(response.status).toBe(200);
 		const responseData = await response.json();
 		expect(responseData).toEqual(data);
-		expect(mockSequelizeInstance.close).toHaveBeenCalled();
+		// Connection should always be closed
+		expect(sequelizeAdapter.closeSequelize).toHaveBeenCalledWith(request);
 	});
 
 	it('should handle custom status code', async () => {
@@ -90,16 +93,16 @@ describe('formatSuccessResponse', () => {
 		expect(response.headers.get('X-Custom')).toBe('value');
 	});
 
-	it('should not close DB connection when keepDBAlive is true', async () => {
+	it('should always close DB connection', async () => {
 		const request = createMockRequest();
 		const data = { test: 'data' };
 
 		await formatSuccessResponse(request, {
 			data,
-			keepDBAlive: true,
 		});
 
-		expect(mockSequelizeInstance.close).not.toHaveBeenCalled();
+		// Connection should always be closed for each request
+		expect(sequelizeAdapter.closeSequelize).toHaveBeenCalledWith(request);
 	});
 
 	it('should validate response when schema provided and validation is strict', async () => {
@@ -133,10 +136,7 @@ describe('formatSuccessResponse', () => {
 		const schema = z.array(z.string()); // Expects array of strings, but data is an object
 		
 		// Ensure sequelize instance is returned
-		vi.mocked(sequelizeAdapter.getSequelize).mockImplementation(async (createIfNotExists) => {
-			if (createIfNotExists === false) {
-				return mockSequelizeInstance;
-			}
+		vi.mocked(sequelizeAdapter.getSequelize).mockImplementation(async (request, createIfNotExists) => {
 			return mockSequelizeInstance;
 		});
 
@@ -166,8 +166,11 @@ describe('formatErrorResponse', () => {
 	beforeEach(async () => {
 		mockSequelizeInstance = mockSequelize(vi);
 		sequelizeAdapter = await import('../../../src/db/adapter.js');
-		vi.mocked(sequelizeAdapter.getSequelize).mockImplementation(async (createIfNotExists) => {
+		vi.mocked(sequelizeAdapter.getSequelize).mockImplementation(async (request, createIfNotExists) => {
 			return mockSequelizeInstance;
+		});
+		vi.mocked(sequelizeAdapter.closeSequelize).mockImplementation(async (request) => {
+			return mockSequelizeInstance.close();
 		});
 	});
 
@@ -184,6 +187,8 @@ describe('formatErrorResponse', () => {
 		expect(response.status).toBe(400);
 		const responseData = await response.json();
 		expect(responseData).toEqual(error);
+		// Connection should always be closed
+		expect(sequelizeAdapter.closeSequelize).toHaveBeenCalledWith(request);
 	});
 
 	it('should default to 500 for unknown errors', async () => {
@@ -265,7 +270,9 @@ describe('authenticateSessionToken', () => {
 			if (resourceName === 'SessionToken') return mockSessionTokenModel;
 			return mockModel(vi, resourceName);
 		});
-		vi.mocked(sequelizeAdapter.getSequelize).mockResolvedValue(mockSequelizeInstance);
+		vi.mocked(sequelizeAdapter.getSequelize).mockImplementation(async (request) => {
+			return mockSequelizeInstance;
+		});
 	});
 
 	afterEach(() => {
