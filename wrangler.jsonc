@@ -54,7 +54,7 @@
 				"DATABASE_TRUST_CERT": "true",
 				"ENVIRONMENT": "preview",
 				"DATABASE_HOST": "mtl.asportsmanager.io",
-				"DATABASE_PORT": "1433",
+				"DATABASE_PORT": "14333",
 				"DATABASE_NAME": "DB_3371_asmstaging",
 				"DATABASE_USERNAME": "DB_3371_asmstaging_user",
 				"POSTHOG_HOST": "https://us.i.posthog.com",
