@@ -14,14 +14,23 @@
 	/**
 	 * KV Namespaces
 	 * https://developers.cloudflare.com/kv/concepts/kv-bindings/
-	 * Replace YOUR_NAMESPACE_ID with the actual namespace ID from Cloudflare Dashboard
 	 */
 	"kv_namespaces": [
 			{
 				"binding": "API_KV",
 				"id": "KV_DEV_NAMESPACE_ID"
 			}
-		],
+	],
+	/**
+	 * R2 Buckets
+	 * https://developers.cloudflare.com/r2/concepts/r2-bindings/
+	*/
+	"r2_buckets": [
+    {
+      "binding": "API_BUCKET",
+      "bucket_name": "r2-dev-bucket-name"
+    }
+  ],
 	/*
 	 * Environment Variables - By Environment
 	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
@@ -43,6 +52,12 @@
 					"id": "KV_DEV_NAMESPACE_ID"
 				}
 			],
+			"r2_buckets": [
+				{
+					"binding": "API_BUCKET",
+					"bucket_name": "r2-dev-bucket-name"
+				}
+			],
 		},
 		"preview": {
 			"route": {
@@ -54,15 +69,23 @@
 				"DATABASE_TRUST_CERT": "true",
 				"ENVIRONMENT": "preview",
 				"DATABASE_HOST": "mtl.asportsmanager.io",
-				"DATABASE_PORT": "1433",
+				"DATABASE_PORT": "14333",
 				"DATABASE_NAME": "DB_3371_asmstaging",
 				"DATABASE_USERNAME": "DB_3371_asmstaging_user",
 				"POSTHOG_HOST": "https://us.i.posthog.com",
+				"AWS_ACCESS_KEY_ID": "AKIAQRYXKLEBZ24GKMGX",
+				"AWS_SES_REGION": "us-east-1",
 			},
 			"kv_namespaces": [
 				{
 					"binding": "API_KV",
 					"id": "4c0491e26df247b5932143315b148477"
+				}
+			],
+			"r2_buckets": [
+				{
+					"binding": "API_BUCKET",
+					"bucket_name": "asm-rest-api-staging"
 				}
 			],
 		},
@@ -76,16 +99,24 @@
 				"DATABASE_ENCRYPT": "false",
 				"DATABASE_TRUST_CERT": "true",
 				"ENVIRONMENT": "production",
-				"DATABASE_HOST": "mndSQL80.everleap.com",
+				"DATABASE_HOST": "mtl.asportsmanager.io",
 				"DATABASE_PORT": "1433",
 				"DATABASE_NAME": "asmproduction",
 				"DATABASE_USERNAME": "asmadmin",
 				"POSTHOG_HOST": "https://us.i.posthog.com",
+				"AWS_ACCESS_KEY_ID": "AKIAQRYXKLEBZ24GKMGX",
+				"AWS_SES_REGION": "us-east-1",
 			},
 			"kv_namespaces": [
 				{
 					"binding": "API_KV",
 					"id": "f046212f59ed4615a96928b39529488b"
+				}
+			],
+			"r2_buckets": [
+				{
+					"binding": "API_BUCKET",
+					"bucket_name": "asm-rest-api-production"
 				}
 			],
 		}

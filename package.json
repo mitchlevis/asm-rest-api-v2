@@ -25,6 +25,7 @@
 	"dependencies": {
 		"@sequelize/core": "^7.0.0-alpha.47",
 		"@sequelize/mssql": "^7.0.0-alpha.47",
+		"aws4fetch": "^1.0.20",
 		"dayjs": "^1.11.19",
 		"itty-router": "^5.0.22",
 		"posthog-node": "^5.11.2",
