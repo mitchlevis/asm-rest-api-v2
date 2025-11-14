@@ -99,7 +99,7 @@
 				"DATABASE_ENCRYPT": "false",
 				"DATABASE_TRUST_CERT": "true",
 				"ENVIRONMENT": "production",
-				"DATABASE_HOST": "mndSQL80.everleap.com",
+				"DATABASE_HOST": "mtl.asportsmanager.io",
 				"DATABASE_PORT": "1433",
 				"DATABASE_NAME": "asmproduction",
 				"DATABASE_USERNAME": "asmadmin",
