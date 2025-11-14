@@ -2,13 +2,15 @@ import { Router } from 'itty-router';
 import { formatSuccessResponse, formatErrorResponse } from './utils/helpers.js';
 import sequelizeAdapter from './db/adapter.js';
 import { usePosthog } from './services/posthog.js';
+import { useR2Service } from './services/R2.js';
 // Import middleware
 // import { dbMiddleware } from './middleware/db.js';
 
 // Import route handlers
 import { setupHealthRoutes } from './routes/health.js';
 import { setupActionsRoutes } from './routes/actions.js';
-
+import { setupS3Routes } from './routes/s3.js';
+import { setupEmailRoutes } from './routes/email.js';
 /**
  * Creates and configures the main router with all routes
  * @param {Object} env - Cloudflare environment variables
@@ -22,6 +24,10 @@ export function createRouter(request, env, ctx) {
 	const posthog = usePosthog();
 	posthog.initialize(request, env, ctx);
 
+	// Initialize R2 Service
+	const r2 = useR2Service();
+	r2.initialize(env);
+
 	const router = Router();
 
 	// Apply database middleware to all routes using itty-router's middleware pattern
@@ -32,6 +38,8 @@ export function createRouter(request, env, ctx) {
 	// Setup route handlers for different features
 	setupHealthRoutes(router);
 	setupActionsRoutes(router);
+	setupS3Routes(router);
+	setupEmailRoutes(router);
 
 	// CORS Options handler for preflight requests
 	router.options('*', (request) => {
