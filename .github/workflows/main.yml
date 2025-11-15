@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - preview
 jobs:
   deploy-production:
     runs-on: ubuntu-latest
