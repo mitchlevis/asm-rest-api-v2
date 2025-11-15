@@ -1,0 +1,34 @@
+import { Sequelize } from '@sequelize/core';
+const Op = Sequelize.Op;
+
+// Convert user-friendly operators to Sequelize operators
+export default {
+  $eq: Op.eq,
+  $ne: Op.ne,
+  $is: Op.is,
+  $not: Op.not,
+  $or: Op.or,
+  $col: Op.col,
+  $gt: Op.gt,
+  $gte: Op.gte,
+  $lt: Op.lt,
+  $lte: Op.lte,
+  $between: Op.between,
+  $notBetween: Op.notBetween,
+  $all: Op.all,
+  $in: Op.in,
+  $notIn: Op.notIn,
+  $like: Op.like,
+  $notLike: Op.notLike,
+  $startsWith: Op.startsWith,
+  $endsWith: Op.endsWith,
+  $substring: Op.substring,
+  $iLike: Op.iLike,
+  $notILike: Op.notILike,
+  $regexp: Op.regexp,
+  $notRegexp: Op.notRegexp,
+  $iRegexp: Op.iRegexp,
+  $notIRegexp: Op.notIRegexp,
+  $any: Op.any,
+  $match: Op.match,
+};

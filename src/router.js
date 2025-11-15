@@ -11,6 +11,7 @@ import { setupHealthRoutes } from './routes/health.js';
 import { setupActionsRoutes } from './routes/actions.js';
 import { setupS3Routes } from './routes/s3.js';
 import { setupEmailRoutes } from './routes/email.js';
+import { setupRestRoutes } from './routes/rest.js';
 /**
  * Creates and configures the main router with all routes
  * @param {Object} env - Cloudflare environment variables
@@ -40,6 +41,7 @@ export function createRouter(request, env, ctx) {
 	setupActionsRoutes(router);
 	setupS3Routes(router);
 	setupEmailRoutes(router);
+	setupRestRoutes(router);
 
 	// CORS Options handler for preflight requests
 	router.options('*', (request) => {
@@ -48,9 +50,9 @@ export function createRouter(request, env, ctx) {
 		const origin = request.headers.get('Origin');
 		headers['Access-Control-Allow-Origin'] = origin || '*';
 		headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH';
-		headers['Access-Control-Allow-Headers'] = 'Content-Type, authorization, Authorization, x-session-token, X-Session-Token, x-username, X-Username';
+		headers['Access-Control-Allow-Headers'] = 'Content-Type, authorization, Authorization, x-session-token, X-Session-Token, x-username, X-Username, x-total-count, X-Total-Count';
 		headers['Access-Control-Allow-Credentials'] = 'true';
-console.log('headers', JSON.stringify(headers, null, 2));
+
 		return new Response('OK', { status: 200, headers: headers });
 	});
 

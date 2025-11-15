@@ -1,5 +1,6 @@
 import sequelizeAdapter from '../db/adapter.js';
 import { MODELS, MODEL_ASSOCIATIONS } from '../db/models';
+import operatorsAliases from './sequelize-aliases.js';
 import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
@@ -36,7 +37,7 @@ export const formatSuccessResponse = async (request, dataOrOptions, statusCodePa
 	const origin = request.headers.get('Origin');
 	headers['Access-Control-Allow-Origin'] = origin || '*';
 	headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH';
-	headers['Access-Control-Allow-Headers'] = 'Content-Type, authorization, Authorization, x-session-token, X-Session-Token, x-username, X-Username';
+	headers['Access-Control-Allow-Headers'] = 'Content-Type, authorization, Authorization, x-session-token, X-Session-Token, x-username, X-Username, x-total-count, X-Total-Count';
 	headers['Access-Control-Allow-Credentials'] = 'true';
 console.log('headers', JSON.stringify(headers, null, 2));
 	// Response validation (if schema provided)
@@ -129,7 +130,7 @@ console.log('formatErrorResponse', request, error);
 	const origin = request.headers.get('Origin');
 	headers['Access-Control-Allow-Origin'] = origin || '*';
 	headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH';
-	headers['Access-Control-Allow-Headers'] = 'Content-Type, authorization, Authorization, x-session-token, X-Session-Token, x-username, X-Username';
+	headers['Access-Control-Allow-Headers'] = 'Content-Type, authorization, Authorization, x-session-token, X-Session-Token, x-username, X-Username, x-total-count, X-Total-Count';
 	headers['Access-Control-Allow-Credentials'] = 'true';
 console.log('headers', JSON.stringify(headers, null, 2));
 	return Response.json(errorObject, {
@@ -378,6 +379,167 @@ export const validateIncomingParameters = async (request, parameters) => {
 
 	return { path: validatedParameters.path, query: validatedParameters.query, body: validatedParameters.body };
 };
+
+// Parse a filter JSON string into a JSON object
+export const parseFilterJSON = (input) => {
+  try{
+    const output = JSON.parse(input);
+    if (typeof output === 'string'){
+      return parseFilterJSON(output);
+    }
+    return output;
+  }
+  catch(e){
+    console.error('Error parsing filter JSON:', e);
+    return undefined;
+  }
+}
+
+// Function to replace operator aliases in a query object with Sequelize operators
+export const replaceOperators = (obj) => {
+  // Handle arrays - preserve them as arrays, don't process recursively
+  if (Array.isArray(obj)) {
+    return obj.map(item => {
+      if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
+        return replaceOperators(item);
+      }
+      return item;
+    });
+  }
+
+  // Initialize an empty object to store the formatted query
+  const formattedObj = {};
+
+  // Iterate over each key in the input object
+  for (const key in obj) {
+    // Check if the current value is an object (which could contain nested queries)
+    if (typeof obj[key] === 'object' && obj[key] !== null) {
+      // If the key is an operator alias, replace it with the corresponding Sequelize operator
+      if (Object.keys(operatorsAliases).includes(key)) {
+        switch (key) {
+          case '$like':
+          case '$notLike':
+            formattedObj[operatorsAliases[key]] = `%${obj[key]}%`;
+            break;
+          case '$in':
+          case '$notIn':
+            // Preserve arrays as-is for $in and $notIn
+            formattedObj[operatorsAliases[key]] = Array.isArray(obj[key]) ? obj[key] : replaceOperators(obj[key]);
+            break;
+          case '$between':
+          case '$notBetween':
+            // Preserve arrays as-is for $between and $notBetween (must be array of 2 values)
+            formattedObj[operatorsAliases[key]] = Array.isArray(obj[key]) ? obj[key] : obj[key];
+            break;
+          default:
+            formattedObj[operatorsAliases[key]] = replaceOperators(obj[key]);
+        }
+      }
+      // If the key is not an operator, recursively call the function to handle nested objects
+      else {
+        formattedObj[key] = replaceOperators(obj[key]);
+      }
+    }
+    // If the current value is not an object
+    else {
+      // Again, replace operator aliases with Sequelize operators if necessary
+      if (Object.keys(operatorsAliases).includes(key)) {
+        switch (key) {
+          case '$like':
+          case '$notLike':
+            formattedObj[operatorsAliases[key]] = `%${obj[key]}%`;
+            break;
+          case '$in':
+          case '$notIn':
+            formattedObj[operatorsAliases[key]] = obj[key];
+            break;
+          default:
+            formattedObj[operatorsAliases[key]] = obj[key];
+        }
+      }
+      // Otherwise, simply copy the key-value pair as is
+      else {
+        formattedObj[key] = obj[key];
+      }
+    }
+  }
+  // Return the formatted query object
+  return formattedObj;
+}
+
+// Function returns an array of primary keys for a given model
+// Uses Sequelize v7 API: model.modelDefinition.attributes
+// Falls back to source MODELS definition if Sequelize v7 structure is not accessible
+export const getPrimaryKeys = (model) => {
+  const modelDefinition = model.modelDefinition;
+
+  if (!modelDefinition) {
+    return [];
+  }
+
+  // Try to get primary keys from modelDefinition.primaryKeys if available
+  if (modelDefinition.primaryKeys && Array.isArray(modelDefinition.primaryKeys)) {
+    return modelDefinition.primaryKeys.map(pk => pk.attributeName || pk.name || pk);
+  }
+
+  // Try rawAttributes first (might still work in v7)
+  const rawAttributes = modelDefinition.rawAttributes;
+  if (rawAttributes && Object.keys(rawAttributes).length > 0) {
+    const primaryKeys = Object.entries(rawAttributes)
+      .filter(([_, attribute]) => attribute?.primaryKey === true)
+      .map(([key, _]) => key);
+    if (primaryKeys.length > 0) {
+      return primaryKeys;
+    }
+  }
+
+  // Try attributes
+  const attributes = modelDefinition.attributes;
+  if (attributes && Object.keys(attributes).length > 0) {
+    const primaryKeys = Object.entries(attributes)
+      .filter(([_, attribute]) => {
+        // Handle both plain objects and Sequelize Attribute instances
+        return attribute?.primaryKey === true ||
+               attribute?.get?.('primaryKey') === true ||
+               (typeof attribute === 'object' && attribute.primaryKey);
+      })
+      .map(([key, _]) => key);
+    if (primaryKeys.length > 0) {
+      return primaryKeys;
+    }
+  }
+
+  // Last resort: check the original model definition from MODELS
+  // This accesses the source definition before Sequelize processes it
+  const sourceModel = MODELS[model.name];
+  if (sourceModel) {
+    return Object.entries(sourceModel)
+      .filter(([_, attribute]) => attribute?.primaryKey === true)
+      .map(([key, _]) => key);
+  }
+
+  return [];
+}
+
+export const createWhereClauseForGetOneRecord = async (model, compoundId) => {
+  const primaryKeys = getPrimaryKeys(model);
+  // If the model has a single primary key, return an object with the primary key and compound ID
+  if(primaryKeys.length === 1){
+    return { [primaryKeys[0]]: compoundId };
+  }
+
+  const idParts = compoundId.split('-');
+  if (idParts.length !== primaryKeys.length) {
+    return Promise.reject({ statusCode: 400, message: 'Invalid ID Format - Supplied ID does not match the number of primary keys for this model' });
+  }
+
+  const whereClause = primaryKeys.reduce((where, key, index) => {
+    where[key] = idParts[index];
+    return where;
+  }, {});
+
+  return whereClause;
+}
 
 // Get a Sequelize object
 export const getSequelizeObject = async (request) => {
