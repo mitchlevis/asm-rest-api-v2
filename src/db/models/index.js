@@ -44,4 +44,60 @@ const MODEL_ASSOCIATIONS = {
  WallPostLike: WallPostLikeAssociations,
 }
 
-export { MODELS, MODEL_ASSOCIATIONS };
+/**
+ * Converts a PascalCase model name to plural kebab-case
+ * Examples: WallPost -> wall-posts, LinkCategory -> link-categories, Availability3 -> availabilities3
+ */
+const modelNameToPluralKebabCase = (modelName) => {
+	// Check if model name ends with a number (e.g., "Availability3")
+	const numberMatch = modelName.match(/^(.+?)(\d+)$/);
+	let baseName = modelName;
+	let numberSuffix = '';
+
+	if (numberMatch) {
+		baseName = numberMatch[1];
+		numberSuffix = numberMatch[2];
+	}
+
+	// Convert PascalCase to kebab-case
+	const kebabCase = baseName
+		.replace(/([A-Z])/g, '-$1') // Insert dash before capital letters
+		.toLowerCase()
+		.replace(/^-/, ''); // Remove leading dash
+
+	// Handle pluralization
+	// Simple rule: add 's' for most cases, 'es' for words ending in s/x/z/ch/sh
+	// For words ending in 'y' preceded by a consonant, change 'y' to 'ies'
+	let pluralized;
+	if (kebabCase.endsWith('y') && !/[aeiou]y$/.test(kebabCase)) {
+		pluralized = kebabCase.slice(0, -1) + 'ies';
+	} else if (kebabCase.match(/([sxz]|ch|sh)$/)) {
+		pluralized = kebabCase + 'es';
+	} else {
+		pluralized = kebabCase + 's';
+	}
+
+	// Append number suffix if it exists
+	return pluralized + numberSuffix;
+};
+
+/**
+ * Maps plural kebab-case endpoint names to singular PascalCase model names
+ * Auto-generated from MODELS to keep in sync
+ */
+const PLURAL_TO_SINGULAR_MAP = Object.keys(MODELS).reduce((acc, modelName) => {
+	const pluralKebabCase = modelNameToPluralKebabCase(modelName);
+	acc[pluralKebabCase] = modelName;
+	return acc;
+}, {});
+
+/**
+ * Resolves a plural kebab-case resource name to its singular PascalCase model name
+ * @param {string} pluralKebabCase - The plural kebab-case name (e.g., 'wall-posts')
+ * @returns {string|null} - The singular PascalCase model name (e.g., 'WallPost') or null if not found
+ */
+const resolveModelName = (pluralKebabCase) => {
+	return PLURAL_TO_SINGULAR_MAP[pluralKebabCase] || null;
+};
+
+export { MODELS, MODEL_ASSOCIATIONS, resolveModelName, modelNameToPluralKebabCase };
