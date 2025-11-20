@@ -27,7 +27,7 @@ const RegionLeaguePay = {
         primaryKey: true
     },
     Pay: {
-        type: DataTypes.DECIMAL,
+        type: DataTypes.DECIMAL(18, 2),
         allowNull: false
     }
 };

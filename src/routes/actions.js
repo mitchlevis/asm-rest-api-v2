@@ -6,6 +6,7 @@ import { formatSuccessResponse, formatErrorResponse } from '../utils/helpers.js'
 
 // GET
 import getWallPostsForUserController from '../controllers/actions/getWallPostsForUser/GET';
+import getMasterScheduleRefereeEventsController from '../controllers/actions/getMasterScheduleRefereeEvents/GET';
 
 // POST
 import loginController from '../controllers/actions/login/POST';
@@ -32,6 +33,10 @@ export function setupActionsRoutes(router) {
 	// GET /actions/wall-posts-for-user - Get wall posts for user (regionId optional)
 	router.get('/actions/wall-posts-for-user/:regionId', getWallPostsForUserController);
 	router.get('/actions/wall-posts-for-user', getWallPostsForUserController);
+
+	// GET /actions/master-schedule-referee-events - Get master schedule referee events (regionId optional)
+	router.get('/actions/master-schedule-referee-events/:regionId', getMasterScheduleRefereeEventsController);
+	router.get('/actions/master-schedule-referee-events', getMasterScheduleRefereeEventsController);
 
 	/*
 		POST Endpoints

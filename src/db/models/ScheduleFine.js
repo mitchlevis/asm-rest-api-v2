@@ -17,7 +17,7 @@ const ScheduleFine = {
         primaryKey: true
     },
     Amount: {
-        type: DataTypes.DECIMAL,
+        type: DataTypes.DECIMAL(18, 2),
         allowNull: false
     },
     Comment: {

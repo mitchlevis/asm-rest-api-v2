@@ -119,6 +119,7 @@ const ScheduleAssociations = {
       modelName: 'RegionUser',
       foreignKey: 'RegionId',
       targetKey: 'RegionId',
+      constraints: false,
     },
     {
       modelName: 'RegionLeague',

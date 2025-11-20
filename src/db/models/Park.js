@@ -36,11 +36,11 @@ const Park = {
     allowNull: false
   },
   Longitude: {
-    type: DataTypes.DECIMAL,
+    type: DataTypes.DECIMAL(10, 7),
     allowNull: false
   },
   Latitude: {
-    type: DataTypes.DECIMAL,
+    type: DataTypes.DECIMAL(10, 7),
     allowNull: false
   },
   PhotoId: {

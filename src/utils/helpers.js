@@ -693,3 +693,38 @@ export const isRegionUserExecutive = async (regionUser) => {
   // chief, assignor, manager, coach
   return regionUser.IsExecutive || positions.includes('chief') || positions.includes('assignor') || positions.includes('manager') || positions.includes('coach');
 }
+
+// Filter unique by compound key
+export const filterUniqueByCompoundKey = (results, keyParts = []) => {
+  const uniqueResultsMap = new Map();
+
+  results.forEach(item => {
+      // const compoundKey = `${item[keyField1]}-${item[keyField2]}`;
+      const compoundKey = keyParts.map(key => item[key]).join('-');
+      if (!uniqueResultsMap.has(compoundKey)) {
+          uniqueResultsMap.set(compoundKey, item);
+      }
+  });
+
+  return Array.from(uniqueResultsMap.values());
+}
+
+// Sort array by property
+export const sortArrayByProperty = (array, property, direction = 'ASC') => {
+  return array.sort((a, b) => {
+      let valueA = a[property];
+      let valueB = b[property];
+
+      // For case-insensitive string comparison convert strings to lowercase
+      if (typeof valueA === 'string' && typeof valueB === 'string') {
+          valueA = valueA.toLowerCase();
+          valueB = valueB.toLowerCase();
+      }
+
+      if (direction.toUpperCase() === 'ASC') {
+          return valueA > valueB ? 1 : (valueA < valueB ? -1 : 0);
+      } else if (direction.toUpperCase() === 'DESC') {
+          return valueA < valueB ? 1 : (valueA > valueB ? -1 : 0);
+      }
+  });
+}

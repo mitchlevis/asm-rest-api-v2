@@ -5,7 +5,7 @@ export const path = {
 };
 
 export const query = {
-	sort_direction: z.enum(['ASC', 'DESC']).optional().default('DESC'),
+	sort_direction: z.enum(['ASC', 'DESC', 'asc', 'desc']).optional().default('DESC').transform((val) => val.toUpperCase()),
 	limit: z.coerce.number().optional().default(-1),
 	offset: z.coerce.number().optional().default(0),
 };
