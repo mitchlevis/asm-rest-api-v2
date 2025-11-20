@@ -1,0 +1,231 @@
+{
+  "analytics": {
+    "GET": {
+      "/actions/analytics-pay-for-referee-user-daily/{userId}/{regionId}": {
+        "handler": "packages/functions/src/actions/GET/getAnalyticsPayForRefereeUserDaily/index.handler",
+        "description": "Get the daily pay for a referee user. You can specify a region (optional)"
+      },
+      "/actions/analytics-pay-for-referee-user-monthly/{userId}/{regionId}": {
+        "handler": "packages/functions/src/actions/GET/getAnalyticsPayForRefereeUserMonthly/index.handler",
+        "description": "Get the monthly pay for a referee user. You can specify a region (optional)"
+      },
+      "/actions/analytics-pay-for-referee-user-weekly/{userId}/{regionId}": {
+        "handler": "packages/functions/src/actions/GET/getAnalyticsPayForRefereeUserWeekly/index.handler",
+        "description": "Get the weekly pay for a referee user. You can specify a region (optional)"
+      },
+      "/actions/analytics-pay-for-referee-user-yearly/{userId}/{regionId}": {
+        "handler": "packages/functions/src/actions/GET/getAnalyticsPayForRefereeUserYearly/index.handler",
+        "description": "Get the yearly pay for a referee user. You can specify a region (optional)"
+      }
+    }
+  },
+  "chatMessages": {
+    "GET": {
+      "/actions/chat-messages-header-list/{userId}": {
+        "handler": "packages/functions/src/actions/GET/getChatMessagesHeaderList/index.handler",
+        "description": "Get the chat messages header list for a user"
+      }
+    }
+  },
+  "contacts": {
+    "GET": {
+      "/actions/contacts-for-user/{userId}/{regionId}": {
+        "handler": "packages/functions/src/actions/GET/getContactsForUser/index.handler",
+        "description": "Get the contacts for a user. You can specify a region (optional)"
+      }
+    }
+  },
+  "events": {
+    "GET": {
+      "/actions/event-diff-for-referee-user/{userId}/{regionId}/{scheduleId}": {
+        "handler": "packages/functions/src/actions/GET/getEventDiffForRefereeUser/index.handler",
+        "description": "Get the difference between the current even and the previously confirmed event for a referee user."
+      },
+      "/actions/events-for-referee-user/{userId}/{regionId}": {
+        "handler": "packages/functions/src/actions/GET/getEventsForRefereeUser/index.handler",
+        "description": "Get the events for a referee user. You can specify a region (optional)"
+      }
+    },
+    "POST": {
+      "/actions/event-book-off-for-referee-user/{userId}/{regionId}/{scheduleId}": {
+        "handler": "packages/functions/src/actions/POST/postEventBookOffForRefereeUser/index.handler",
+        "description": "Book off an event (ie. Cannot attend) for a referee user"
+      }
+    }
+  },
+  "reminders": {
+    "GET": {
+      "/actions/unresolved-reminders-for-referee-user-optimized": {
+        "handler": "packages/functions/src/actions/GET/getUnresolvedRemindersForRefereeUserOptimized/index.handler",
+        "description": "Get the unresolved reminders for a referee user (optimized)"
+      }
+    }
+  },
+  "sessionTokens": {
+    "POST": {
+      "/actions/validate-user-session-token": {
+        "handler": "packages/functions/src/actions/POST/validateUserSessionToken/index.handler",
+        "description": "Validate a user session token"
+      }
+    }
+  },
+  "wallPosts": {
+    "GET": {
+      "/actions/wall-posts-for-user/{regionId}": {
+        "handler": "packages/functions/src/actions/GET/getWallPostsForUser/index.handler",
+        "description": "Get the wall posts for a user. You can specify a region (optional)"
+      }
+    },
+    "POST": {
+      "/actions/create-wall-post": {
+        "handler": "packages/functions/src/actions/POST/createWallPost/index.handler",
+        "description": "Create a wall post"
+      },
+      "/actions/create-wall-post-comment": {
+        "handler": "packages/functions/src/actions/POST/createWallPostComment/index.handler",
+        "description": "Create a wall post comment for a wall post OR for a Wall post comment"
+      },
+      "/actions/create-wall-post-like": {
+        "handler": "packages/functions/src/actions/POST/createWallPostLike/index.handler",
+        "description": "Create a wall post like for a wall post or for a wall post comment"
+      }
+    }
+  },
+  "masterSchedule":{
+    "GET": {
+      "/actions/master-schedule-referee-events/{userId}/{regionId}": {
+        "handler": "packages/functions/src/actions/GET/getMasterScheduleRefereeEvents/index.handler",
+        "description": "Get the master schedule for referee events (ie. all events that are scheduled to be attended by a referee). You can specify a region (optional)"
+      },
+      "/actions/master-schedule-assign-region-users/{regionId}": {
+        "handler": "packages/functions/src/actions/GET/getMasterScheduleAssignRegionUsers/index.handler",
+        "description": "Get a list of Region Users [with their rank(s)] for assigning to a schedule."
+      },
+      "/actions/master-schedule-assign-region-users-availability/{regionId}/{scheduleId}": {
+        "handler": "packages/functions/src/actions/GET/getMasterScheduleAssignRegionUsersAvailability/index.handler",
+        "description": "Get a list of Region Users [with their availability & conflicts] for assigning to a specific schedule."
+      },
+      "/actions/master-schedule-form-data/{regionId}":{
+        "handler": "packages/functions/src/actions/GET/getMasterScheduleFormDataOptimized/index.handler",
+        "description": "Get the form data for the master schedule"
+      }
+    }
+  },
+  "globalAvailability": {
+    "GET": {
+      "/actions/global-availability-region-users/{regionId}": {
+        "handler": "packages/functions/src/actions/GET/getGlobalAvailabilityRegionUsers/index.handler",
+        "description": "Get the global availability for region users. You can specify a region (optional)"
+      },
+      "/actions/global-availability-form-data/{regionId}": {
+        "handler": "packages/functions/src/actions/GET/getGlobalAvailabilityFormData/index.handler",
+        "description": "Get the global availability form data for a region"
+      }
+    }
+  },
+  "myAvailability": {
+    "GET": {
+      "/actions/my-availability-region-user/{regionId}": {
+        "handler": "packages/functions/src/actions/GET/getMyAvailabilityRegionUser/index.handler",
+        "description": "Get the availability for a user for a specific region"
+      },
+      "/actions/assignments-monthly-for-region-user/{regionId}": {
+        "handler": "packages/functions/src/actions/GET/getAssignmentsMonthlyForRegionUser/index.handler",
+        "description": "Get the assignments for a user for a specific region for a specific month"
+      }
+    }
+  },
+  "mySchedule": {
+    "GET": {
+      "/actions/my-schedule-referee-events/{regionId}": {
+        "handler": "packages/functions/src/actions/GET/getMyScheduleRefereeEvents/index.handler",
+        "description": "Get the schedule for a user. You can specify a region (optional)"
+      }
+    }
+  },
+  "availableSpots": {
+    "GET": {
+      "/actions/available-spots-for-region/{regionId}": {
+        "handler": "packages/functions/src/actions/GET/getAvailableSpotsOptimized/index.handler",
+        "description": "Get the available spots for a region"
+      }
+    }
+  },
+  "user": {
+    "GET": {
+      "/actions/get-user-basic-information": {
+        "handler": "packages/functions/src/actions/GET/getUserBasicInformation/index.handler",
+        "description": "Get the basic information for a user using the legacy API. Cached"
+      },
+      "/actions/validate-region-invitation/{invitationId}/{email}": {
+        "handler": "packages/functions/src/actions/GET/validateRegionInvitation/index.handler",
+        "description": "Validate a region user invitation. Returns the region user if exists, otherwise returns regionUserExists: false, the email, the region name and the region id."
+      },
+      "/actions/refresh-region-for-user/{regionId}": {
+        "handler": "packages/functions/src/actions/GET/refreshRegionForUser/index.handler",
+        "description": "Refresh the region for a user - Combines the Region and some Region User Data (Matches old-back-end behavior)"
+      }
+    },
+    "POST": {
+      "/actions/respond-to-region-invitation": {
+        "handler": "packages/functions/src/actions/POST/respondToRegionInvitation/index.handler",
+        "description": "Respond to a region invitation"
+      },
+      "/actions/login": {
+        "handler": "packages/functions/src/actions/POST/login/index.handler",
+        "description": "Login a user"
+      }
+    }
+  },
+  "userManagement": {
+    "GET": {
+      "/actions/region-users/{regionId}": {
+        "handler": "packages/functions/src/actions/GET/getRegionUsers/index.handler",
+        "description": "Get the region users for a region. Requires executive or canViewMasterSchedule permissions"
+      },
+      "/actions/user-management-form-data/{regionId}": {
+        "handler": "packages/functions/src/actions/GET/getUserManagementFormData/index.handler",
+        "description": "Get the form data for the user management page"
+      }
+    },
+    "DELETE": {
+      "/actions/region-user/{regionId}/{username}": {
+        "handler": "packages/functions/src/actions/DELETE/deleteRegionUser/index.handler",
+        "description": "Delete a region user. Requires executive permissions"
+      }
+    }
+  },
+  "links": {
+    "GET": {
+      "/actions/links/{regionId}": {
+        "handler": "packages/functions/src/actions/GET/getLinks/index.handler",
+        "description": "Get the links for a region. You can specify a region (optional)"
+      },
+      "/actions/link-categories/{regionId}": {
+        "handler": "packages/functions/src/actions/GET/getLinkCategories/index.handler",
+        "description": "Get the link categories for a region. You can specify a region (optional)"
+      }
+    },
+    "PUT": {
+      "/actions/link-category/{regionId}": {
+        "handler": "packages/functions/src/actions/PUT/linkCategory/index.handler",
+        "description": "Create or update a link category. You need to specify a region"
+      },
+      "/actions/link/{regionId}": {
+        "handler": "packages/functions/src/actions/PUT/link/index.handler",
+        "description": "Create or update a link. You need to specify a region"
+      }
+    },
+    "DELETE": {
+      "/actions/link-category/{regionId}/{categoryId}": {
+        "handler": "packages/functions/src/actions/DELETE/linkCategory/index.handler",
+        "description": "Delete a link category. You need to specify a region and a category id"
+      },
+      "/actions/link/{regionId}/{linkId}": {
+        "handler": "packages/functions/src/actions/DELETE/link/index.handler",
+        "description": "Delete a link. You need to specify a region and a link id"
+      }
+    }
+  }
+}
+

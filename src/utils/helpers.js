@@ -1,3 +1,4 @@
+import Sequelize from '@sequelize/core';
 import sequelizeAdapter from '../db/adapter.js';
 import { MODELS, MODEL_ASSOCIATIONS } from '../db/models';
 import operatorsAliases from './sequelize-aliases.js';
@@ -693,3 +694,135 @@ export const isRegionUserExecutive = async (regionUser) => {
   // chief, assignor, manager, coach
   return regionUser.IsExecutive || positions.includes('chief') || positions.includes('assignor') || positions.includes('manager') || positions.includes('coach');
 }
+
+// Filter unique by compound key
+export const filterUniqueByCompoundKey = (results, keyParts = []) => {
+  const uniqueResultsMap = new Map();
+
+  results.forEach(item => {
+      // const compoundKey = `${item[keyField1]}-${item[keyField2]}`;
+      const compoundKey = keyParts.map(key => item[key]).join('-');
+      if (!uniqueResultsMap.has(compoundKey)) {
+          uniqueResultsMap.set(compoundKey, item);
+      }
+  });
+
+  return Array.from(uniqueResultsMap.values());
+}
+
+// Sort array by property
+export const sortArrayByProperty = (array, property, direction = 'ASC') => {
+  return array.sort((a, b) => {
+      let valueA = a[property];
+      let valueB = b[property];
+
+      // For case-insensitive string comparison convert strings to lowercase
+      if (typeof valueA === 'string' && typeof valueB === 'string') {
+          valueA = valueA.toLowerCase();
+          valueB = valueB.toLowerCase();
+      }
+
+      if (direction.toUpperCase() === 'ASC') {
+          return valueA > valueB ? 1 : (valueA < valueB ? -1 : 0);
+      } else if (direction.toUpperCase() === 'DESC') {
+          return valueA < valueB ? 1 : (valueA > valueB ? -1 : 0);
+      }
+  });
+}
+
+// Build contextual facet values (no counts) for one or more fields based on current where/include
+// facetSpecs: [{ key, attribute, labelAttribute?, labelConcat?: { parts: string[], separator?: string }, labelCoalesce?: { parts: string[] }, include?, order? }]
+export const buildFacetValues = async ({ model, where = {}, include = [], facetSpecs = [], limit = 50, sequelize = undefined, request = undefined }) => {
+  const db = sequelize || await getSequelizeObject(request);
+
+  const tasks = facetSpecs.map(async (spec) => {
+    const attributeCol = Sequelize.col(spec.attribute);
+
+    let labelCol = null;
+    if (spec.labelAttribute) {
+      labelCol = Sequelize.col(spec.labelAttribute);
+    } else if (spec.labelConcat && Array.isArray(spec.labelConcat.parts) && spec.labelConcat.parts.length > 0) {
+      const sep = spec.labelConcat.separator ?? ' - ';
+      const parts = [];
+      spec.labelConcat.parts.forEach((p, idx) => {
+        if (idx > 0) {
+          // Use Unicode string literal for MSSQL
+          parts.push(Sequelize.literal(`N'${sep.replace(/'/g, "''")}'`));
+        }
+        parts.push(Sequelize.col(p));
+      });
+      labelCol = Sequelize.fn('CONCAT', ...parts);
+    } else if (spec.labelCoalesce && Array.isArray(spec.labelCoalesce.parts) && spec.labelCoalesce.parts.length > 0) {
+      const parts = spec.labelCoalesce.parts.map(p => Sequelize.col(p));
+      labelCol = Sequelize.fn('COALESCE', ...parts);
+    }
+
+    const attributes = [[attributeCol, 'value']];
+    if(labelCol){
+      attributes.push([labelCol, 'label']);
+    }
+
+    const group = [attributeCol];
+    if(labelCol){
+      group.push(labelCol);
+    }
+
+    // Always order by the selected alias to avoid GROUP BY issues in SQL Server
+    const order = [[Sequelize.col(labelCol ? 'label' : 'value'), 'ASC']];
+
+    // Ensure includes used for faceting do not select extra columns that would break GROUP BY
+    // When using an alias (as), remove the model property to let Sequelize resolve it from the association
+    // Deduplicate includes by alias (as) or model to prevent duplicate joins
+    const allIncludes = [
+      ...(include || []),
+      ...((spec.include || []))
+    ];
+
+    // Deduplicate includes - use a Map keyed by alias (as) or model name
+    const includeMap = new Map();
+    for (const inc of allIncludes) {
+      const key = inc.as || (inc.model?.name || inc.model) || JSON.stringify(inc);
+      if (!includeMap.has(key)) {
+        const sanitized = { ...inc, attributes: [] };
+        // Remove model property when using an alias - Sequelize will resolve from association
+        if (sanitized.as) {
+          delete sanitized.model;
+        }
+        includeMap.set(key, sanitized);
+      }
+    }
+    const sanitizedInclude = Array.from(includeMap.values());
+
+    const rows = await model.findAll({
+      where,
+      include: sanitizedInclude,
+      attributes,
+      group,
+      order,
+      // Intentionally omit limit to prevent MSSQL from appending PKs to ORDER BY in grouped queries
+      raw: true,
+      subQuery: false,
+    });
+
+    // Omit null/undefined facet values
+    const filteredRows = rows.filter(r => r.value !== null && r.value !== undefined);
+
+    const valuesAll = filteredRows.map(r => {
+      const out = { value: r.value };
+      if(r.label !== undefined){
+        out.label = r.label;
+      }
+      return out;
+    });
+
+    const values = valuesAll.slice(0, Math.max(0, limit || 0));
+
+    return [spec.key, values];
+  });
+
+  const results = await Promise.all(tasks);
+  return results.reduce((acc, [key, values]) => {
+    acc[key] = values;
+    return acc;
+  }, {});
+};

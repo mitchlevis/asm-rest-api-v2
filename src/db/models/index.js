@@ -1,47 +1,110 @@
+import { Availability3, Availability3Associations } from './Availability3';
+import { ChatMessage, ChatMessageAssociations } from './ChatMessage';
+import { CrawlerSchedule, CrawlerScheduleAssociations } from './CrawlerSchedule';
+import { CrawlerScheduleEvent, CrawlerScheduleEventAssociations } from './CrawlerScheduleEvent';
+import { FriendNotification, FriendNotificationAssociations } from './FriendNotification';
 import { Link, LinkAssociations } from './Link';
 import { LinkCategory, LinkCategoryAssociations } from './LinkCategory';
-import { FriendNotification, FriendNotificationAssociations } from './FriendNotification';
+import { Park, ParkAssociations } from './Park';
 import { Region, RegionAssociations } from './Region';
+import { RegionLeague, RegionLeagueAssociations } from './RegionLeague';
+import { RegionLeaguePay, RegionLeaguePayAssociations } from './RegionLeaguePay';
 import { RegionUser, RegionUserAssociations } from './RegionUser';
-import { User, UserAssociations } from './User';
+import { Schedule, ScheduleAssociations } from './Schedule';
+import { ScheduleBookOff, ScheduleBookOffAssociations } from './ScheduleBookOff';
+import { ScheduleConfirm, ScheduleConfirmAssociations } from './ScheduleConfirm';
+import { ScheduleFine, ScheduleFineAssociations } from './ScheduleFine';
+import { SchedulePosition, SchedulePositionAssociations } from './SchedulePosition';
+import { SchedulePositionTemp, SchedulePositionTempAssociations } from './SchedulePositionTemp';
+import { SchedulePositionVersion, SchedulePositionVersionAssociations } from './SchedulePositionVersion';
+import { ScheduleRequest, ScheduleRequestAssociations } from './ScheduleRequest';
+import { ScheduleTemp, ScheduleTempAssociations } from './ScheduleTemp';
+import { ScheduleUserComment, ScheduleUserCommentAssociations } from './ScheduleUserComment';
+import { ScheduleVersion, ScheduleVersionAssociations } from './ScheduleVersion';
 import { SessionToken, SessionTokenAssociations } from './SessionToken';
+import { Team, TeamAssociations } from './Team';
+import { User, UserAssociations } from './User';
+import { UserInvitation, UserInvitationAssociations } from './UserInvitation';
 import { WallPost, WallPostAssociations } from './WallPost';
 import { WallPostComment, WallPostCommentAssociations } from './WallPostComment';
 import { WallPostCommentComment, WallPostCommentCommentAssociations } from './WallPostCommentComment';
 import { WallPostCommentCommentLike, WallPostCommentCommentLikeAssociations } from './WallPostCommentCommentLike';
 import { WallPostCommentLike, WallPostCommentLikeAssociations } from './WallPostCommentLike';
 import { WallPostLike, WallPostLikeAssociations } from './WallPostLike';
+import { WallPostTags, WallPostTagsAssociations } from './WallPostTags';
 
 const MODELS = {
+ Availability3,
+ ChatMessage,
+ CrawlerSchedule,
+ CrawlerScheduleEvent,
+ FriendNotification,
  Link,
  LinkCategory,
- FriendNotification,
+ Park,
  Region,
+ RegionLeague,
+ RegionLeaguePay,
  RegionUser,
- User,
+ Schedule,
+ ScheduleBookOff,
+ ScheduleConfirm,
+ ScheduleFine,
+ SchedulePosition,
+ SchedulePositionTemp,
+ SchedulePositionVersion,
+ ScheduleRequest,
+ ScheduleTemp,
+ ScheduleUserComment,
+ ScheduleVersion,
  SessionToken,
+ Team,
+ User,
+ UserInvitation,
  WallPost,
  WallPostComment,
  WallPostCommentComment,
  WallPostCommentCommentLike,
  WallPostCommentLike,
  WallPostLike,
+ WallPostTags,
 }
 
 const MODEL_ASSOCIATIONS = {
+ Availability3: Availability3Associations,
+ ChatMessage: ChatMessageAssociations,
+ CrawlerSchedule: CrawlerScheduleAssociations,
+ CrawlerScheduleEvent: CrawlerScheduleEventAssociations,
+ FriendNotification: FriendNotificationAssociations,
  Link: LinkAssociations,
  LinkCategory: LinkCategoryAssociations,
- FriendNotification: FriendNotificationAssociations,
+ Park: ParkAssociations,
  Region: RegionAssociations,
+ RegionLeague: RegionLeagueAssociations,
+ RegionLeaguePay: RegionLeaguePayAssociations,
  RegionUser: RegionUserAssociations,
- User: UserAssociations,
+ Schedule: ScheduleAssociations,
+ ScheduleBookOff: ScheduleBookOffAssociations,
+ ScheduleConfirm: ScheduleConfirmAssociations,
+ ScheduleFine: ScheduleFineAssociations,
+ SchedulePosition: SchedulePositionAssociations,
+ SchedulePositionTemp: SchedulePositionTempAssociations,
+ SchedulePositionVersion: SchedulePositionVersionAssociations,
+ ScheduleRequest: ScheduleRequestAssociations,
+ ScheduleTemp: ScheduleTempAssociations,
+ ScheduleUserComment: ScheduleUserCommentAssociations,
+ ScheduleVersion: ScheduleVersionAssociations,
  SessionToken: SessionTokenAssociations,
+ Team: TeamAssociations,
+ User: UserAssociations,
+ UserInvitation: UserInvitationAssociations,
  WallPost: WallPostAssociations,
  WallPostComment: WallPostCommentAssociations,
  WallPostCommentComment: WallPostCommentCommentAssociations,
  WallPostCommentCommentLike: WallPostCommentCommentLikeAssociations,
  WallPostCommentLike: WallPostCommentLikeAssociations,
  WallPostLike: WallPostLikeAssociations,
+ WallPostTags: WallPostTagsAssociations,
 }
 
 /**

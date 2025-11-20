@@ -6,6 +6,11 @@ import { formatSuccessResponse, formatErrorResponse } from '../utils/helpers.js'
 
 // GET
 import getWallPostsForUserController from '../controllers/actions/getWallPostsForUser/GET';
+import getMasterScheduleRefereeEventsController from '../controllers/actions/getMasterScheduleRefereeEvents/GET';
+import getMyScheduleRefereeEventsController from '../controllers/actions/getMyScheduleRefereeEvents/GET';
+import getMasterScheduleFormDataController from '../controllers/actions/getMasterScheduleFormData/GET';
+import getMasterScheduleAssignRegionUsersController from '../controllers/actions/getMasterScheduleAssignRegionUsers/GET';
+import getMasterScheduleAssignRegionUsersAvailabilityController from '../controllers/actions/getMasterScheduleAssignRegionUsersAvailability/GET';
 
 // POST
 import loginController from '../controllers/actions/login/POST';
@@ -32,6 +37,24 @@ export function setupActionsRoutes(router) {
 	// GET /actions/wall-posts-for-user - Get wall posts for user (regionId optional)
 	router.get('/actions/wall-posts-for-user/:regionId', getWallPostsForUserController);
 	router.get('/actions/wall-posts-for-user', getWallPostsForUserController);
+
+	// GET /actions/master-schedule-referee-events - Get master schedule referee events (regionId optional)
+	router.get('/actions/master-schedule-referee-events/:regionId', getMasterScheduleRefereeEventsController);
+	router.get('/actions/master-schedule-referee-events', getMasterScheduleRefereeEventsController);
+
+	// GET /actions/my-schedule-referee-events - Get my schedule referee events (regionId optional)
+	router.get('/actions/my-schedule-referee-events/:regionId', getMyScheduleRefereeEventsController);
+	router.get('/actions/my-schedule-referee-events', getMyScheduleRefereeEventsController);
+
+	// GET /actions/master-schedule-form-data - Get master schedule form data (regionId optional)
+	router.get('/actions/master-schedule-form-data/:regionId', getMasterScheduleFormDataController);
+	router.get('/actions/master-schedule-form-data', getMasterScheduleFormDataController);
+
+	// GET /actions/master-schedule-assign-region-users - Get region users for assigning to schedule
+	router.get('/actions/master-schedule-assign-region-users/:regionId', getMasterScheduleAssignRegionUsersController);
+
+	// GET /actions/master-schedule-assign-region-users-availability - Get region users with availability & conflicts for a specific schedule
+	router.get('/actions/master-schedule-assign-region-users-availability/:regionId/:scheduleId', getMasterScheduleAssignRegionUsersAvailabilityController);
 
 	/*
 		POST Endpoints

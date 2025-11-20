@@ -5,9 +5,8 @@ export const path = {
 };
 
 export const query = {
-	sort_direction: z.enum(['ASC', 'DESC', 'asc', 'desc']).optional().default('DESC').transform((val) => val.toUpperCase()),
-	limit: z.coerce.number().optional().default(-1),
-	offset: z.coerce.number().optional().default(0),
+	show_archived: z.coerce.boolean().optional().default(false),
+	force_refresh: z.coerce.boolean().optional().default(false),
 };
 
 export const body = {
@@ -19,4 +18,3 @@ export default {
   query,
   body
 };
-
