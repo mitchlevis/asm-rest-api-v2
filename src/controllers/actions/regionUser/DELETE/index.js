@@ -16,17 +16,15 @@ export default async (request) => {
     const regionUserModel = await getDbObject('RegionUser', true, request);
     const regionUser = await regionUserModel.findOne({ where: { RegionId: regionId, RealUsername: userId }});
 
-		// Verify if the user is executive
-    const isExecutive = await isRegionUserExecutive(regionUser);
-    if(!isExecutive){
-      await throwError(403, 'User does not have the required permissions to delete region users');
-    }
-
+		// Check if user has access to the region
     if(!regionUser){
       await throwError(403, `User ${userId} does not have access to region ${regionId}`);
     }
-    if(!regionUser.IsExecutive){
-      await throwError(403, `User does not have permission to delete region users`);
+
+		// Verify if the user is executive (checks both IsExecutive flag and positions)
+    const isExecutive = await isRegionUserExecutive(regionUser);
+    if(!isExecutive){
+      await throwError(403, 'User does not have the required permissions to delete region users');
     }
 
     // Get User to Delete

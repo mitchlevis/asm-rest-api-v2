@@ -11,6 +11,9 @@ import getMyScheduleRefereeEventsController from '../controllers/actions/getMySc
 import getMasterScheduleFormDataController from '../controllers/actions/getMasterScheduleFormData/GET';
 import getMasterScheduleAssignRegionUsersController from '../controllers/actions/getMasterScheduleAssignRegionUsers/GET';
 import getMasterScheduleAssignRegionUsersAvailabilityController from '../controllers/actions/getMasterScheduleAssignRegionUsersAvailability/GET';
+import getRegionUsersController from '../controllers/actions/getRegionUsers/GET';
+import getUserManagementFormDataController from '../controllers/actions/getUserManagementFormData/GET';
+import getUserBasicInformationController from '../controllers/actions/getUserBasicInformation/GET';
 
 // POST
 import loginController from '../controllers/actions/login/POST';
@@ -55,6 +58,15 @@ export function setupActionsRoutes(router) {
 
 	// GET /actions/master-schedule-assign-region-users-availability - Get region users with availability & conflicts for a specific schedule
 	router.get('/actions/master-schedule-assign-region-users-availability/:regionId/:scheduleId', getMasterScheduleAssignRegionUsersAvailabilityController);
+
+	// GET /actions/region-users/:regionId - Get region users for a region (requires executive or canViewMasterSchedule permissions)
+	router.get('/actions/region-users/:regionId', getRegionUsersController);
+
+	// GET /actions/user-management-form-data/:regionId - Get form data for the user management page (requires executive or canViewMasterSchedule permissions)
+	router.get('/actions/user-management-form-data/:regionId', getUserManagementFormDataController);
+
+	// GET /actions/get-user-basic-information - Get basic information for authenticated user
+	router.get('/actions/get-user-basic-information', getUserBasicInformationController);
 
 	/*
 		POST Endpoints

@@ -1,4 +1,6 @@
 import { Availability3, Availability3Associations } from './Availability3';
+import { AvailabilityDueDate, AvailabilityDueDateAssociations } from './AvailabilityDueDate';
+import { AvailabilityDueDateUser, AvailabilityDueDateUserAssociations } from './AvailabilityDueDateUser';
 import { ChatMessage, ChatMessageAssociations } from './ChatMessage';
 import { CrawlerSchedule, CrawlerScheduleAssociations } from './CrawlerSchedule';
 import { CrawlerScheduleEvent, CrawlerScheduleEventAssociations } from './CrawlerScheduleEvent';
@@ -25,6 +27,8 @@ import { SessionToken, SessionTokenAssociations } from './SessionToken';
 import { Team, TeamAssociations } from './Team';
 import { User, UserAssociations } from './User';
 import { UserInvitation, UserInvitationAssociations } from './UserInvitation';
+import { UserSubmittedInfo, UserSubmittedInfoAssociations } from './UserSubmittedInfo';
+import { UsernameLastClicked, UsernameLastClickedAssociations } from './UsernameLastClicked';
 import { WallPost, WallPostAssociations } from './WallPost';
 import { WallPostComment, WallPostCommentAssociations } from './WallPostComment';
 import { WallPostCommentComment, WallPostCommentCommentAssociations } from './WallPostCommentComment';
@@ -35,6 +39,8 @@ import { WallPostTags, WallPostTagsAssociations } from './WallPostTags';
 
 const MODELS = {
  Availability3,
+ AvailabilityDueDate,
+ AvailabilityDueDateUser,
  ChatMessage,
  CrawlerSchedule,
  CrawlerScheduleEvent,
@@ -61,6 +67,8 @@ const MODELS = {
  Team,
  User,
  UserInvitation,
+ UserSubmittedInfo,
+ UsernameLastClicked,
  WallPost,
  WallPostComment,
  WallPostCommentComment,
@@ -72,6 +80,8 @@ const MODELS = {
 
 const MODEL_ASSOCIATIONS = {
  Availability3: Availability3Associations,
+ AvailabilityDueDate: AvailabilityDueDateAssociations,
+ AvailabilityDueDateUser: AvailabilityDueDateUserAssociations,
  ChatMessage: ChatMessageAssociations,
  CrawlerSchedule: CrawlerScheduleAssociations,
  CrawlerScheduleEvent: CrawlerScheduleEventAssociations,
@@ -98,6 +108,8 @@ const MODEL_ASSOCIATIONS = {
  Team: TeamAssociations,
  User: UserAssociations,
  UserInvitation: UserInvitationAssociations,
+ UserSubmittedInfo: UserSubmittedInfoAssociations,
+ UsernameLastClicked: UsernameLastClickedAssociations,
  WallPost: WallPostAssociations,
  WallPostComment: WallPostCommentAssociations,
  WallPostCommentComment: WallPostCommentCommentAssociations,
