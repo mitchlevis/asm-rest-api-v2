@@ -264,6 +264,17 @@ const preprocessQueryData = (queryData) => {
 	return processed;
 };
 
+// Helper function to properly parse boolean query parameters
+// Handles string "false" correctly (z.coerce.boolean() treats "false" as truthy)
+export const parseBooleanQueryParam = () => {
+	return z.union([z.string(), z.boolean()]).optional().transform((val) => {
+		if (val === undefined || val === null) return false;
+		if (typeof val === 'boolean') return val;
+		const lower = String(val).toLowerCase();
+		return lower === 'true' || lower === '1';
+	}).default(false);
+};
+
 // Helper function to format Zod errors
 const formatZodError = (error) => {
 	if (error instanceof z.ZodError && error.errors && error.errors.length > 0) {
@@ -678,6 +689,25 @@ export const convertPropertiesToCamelCase = (obj) => {
   }
 
   return result;
+};
+
+// Parse JSON fields recursively in an object
+export const parseJSONFields = (obj) => {
+	// Check if the input is an object or array, and iterate through its properties or elements.
+	if (obj !== null && typeof obj === 'object') {
+		Object.keys(obj).forEach(key => {
+			// Attempt to parse each property or element that is a string.
+			if (typeof obj[key] === 'string') {
+				try {
+					obj[key] = JSON.parse(obj[key]);
+				} catch (e) {
+					// If parsing fails, it's not a JSON string, so do nothing.
+				}
+			}
+			// If the property or element is an object or array, recursively apply this function.
+			parseJSONFields(obj[key]);
+		});
+	}
 };
 
 // Check if the region user is executive

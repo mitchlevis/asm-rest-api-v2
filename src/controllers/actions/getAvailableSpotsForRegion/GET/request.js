@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { parseFilterJSON } from '../../../../utils/helpers.js';
+import { parseFilterJSON, parseBooleanQueryParam } from '../../../../utils/helpers.js';
 
 export const path = {
-	regionId: z.string(),
+	regionId: z.string().optional().transform((val) => val === '' ? null : val).default(null),
 };
 
 export const query = {
@@ -10,16 +10,17 @@ export const query = {
 	sort: z.string()
 		.optional()
 		.transform((val) => {
-			if (!val) return ['FirstName'];
+			if (!val) return ['GameDate'];
 			return val.split(',').map(sort => sort.trim()).filter(sort => sort.length > 0);
 		}),
 	sort_direction: z.enum(['ASC', 'DESC', 'asc', 'desc']).optional()
 		.transform((val) => {
-			if (!val) return 'ASC';
+			if (!val) return 'DESC';
 			return val.toUpperCase();
 		}),
 	limit: z.coerce.number().optional().default(25),
 	offset: z.coerce.number().optional().default(0),
+	group_parks: parseBooleanQueryParam(),
 };
 
 export const body = {

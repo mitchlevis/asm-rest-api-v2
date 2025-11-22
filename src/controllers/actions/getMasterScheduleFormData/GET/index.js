@@ -12,7 +12,7 @@ export default async (request) => {
 
 		const { regionId } = path;
 		const { show_archived: showArchived } = query;
-
+console.log('showArchived', showArchived);
 		const startTime = Date.now();
 		console.log('Fetching Data');
 
@@ -30,9 +30,12 @@ export default async (request) => {
 			WHERE RealUsername = :username
 				AND IsArchived = :showArchived
 		`;
+		const replacements = { username: userId, showArchived: showArchived ? 1 : 0 };
+		console.log('[QUERY] userRegionsQuery:', userRegionsQuery);
+		console.log('[QUERY] replacements:', replacements);
 		const userRegions = await sequelize.query(userRegionsQuery, {
 			type: sequelize.QueryTypes.SELECT,
-			replacements: { username: userId, showArchived: showArchived ? 1 : 0 }
+			replacements
 		});
 		console.log(`[TIMING] User regions query took ${Date.now() - userRegionsQueryStart}ms`);
 
