@@ -680,6 +680,25 @@ export const convertPropertiesToCamelCase = (obj) => {
   return result;
 };
 
+// Parse JSON fields recursively in an object
+export const parseJSONFields = (obj) => {
+	// Check if the input is an object or array, and iterate through its properties or elements.
+	if (obj !== null && typeof obj === 'object') {
+		Object.keys(obj).forEach(key => {
+			// Attempt to parse each property or element that is a string.
+			if (typeof obj[key] === 'string') {
+				try {
+					obj[key] = JSON.parse(obj[key]);
+				} catch (e) {
+					// If parsing fails, it's not a JSON string, so do nothing.
+				}
+			}
+			// If the property or element is an object or array, recursively apply this function.
+			parseJSONFields(obj[key]);
+		});
+	}
+};
+
 // Check if the region user is executive
 export const isRegionUserExecutive = async (regionUser) => {
   let positions = [];

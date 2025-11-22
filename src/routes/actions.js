@@ -14,6 +14,8 @@ import getMasterScheduleAssignRegionUsersAvailabilityController from '../control
 import getRegionUsersController from '../controllers/actions/getRegionUsers/GET';
 import getUserManagementFormDataController from '../controllers/actions/getUserManagementFormData/GET';
 import getUserBasicInformationController from '../controllers/actions/getUserBasicInformation/GET';
+import validateRegionInvitationController from '../controllers/actions/validateRegionInvitation/GET';
+import refreshRegionForUserController from '../controllers/actions/refreshRegionForUser/GET';
 
 // POST
 import loginController from '../controllers/actions/login/POST';
@@ -67,6 +69,12 @@ export function setupActionsRoutes(router) {
 
 	// GET /actions/get-user-basic-information - Get basic information for authenticated user
 	router.get('/actions/get-user-basic-information', getUserBasicInformationController);
+
+	// GET /actions/validate-region-invitation/:invitationId/:email - Validate a region invitation (public endpoint)
+	router.get('/actions/validate-region-invitation/:invitationId/:email', validateRegionInvitationController);
+
+	// GET /actions/refresh-region-for-user/:regionId - Refresh region and region user data for authenticated user
+	router.get('/actions/refresh-region-for-user/:regionId', refreshRegionForUserController);
 
 	/*
 		POST Endpoints
